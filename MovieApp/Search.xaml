@@ -1,9 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
+
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MovieApp.MainPage">
-
-    <ScrollView>
+             x:Class="MovieApp.Search">
+    <ContentPage.Content>
         <VerticalStackLayout
             Spacing="25"
             Padding="30,0"
@@ -12,13 +12,6 @@
                 Text="Shell Tab Layout" TextColor="White"
                 VerticalOptions="Center" HorizontalOptions="Center"
                 FontFamily="OpenSans_Semibold" FontSize="40" FontAttributes="Bold"/>
-            <Label
-                Text="Click a tab below to navigate."
-                    TextColor="White"    
-                VerticalOptions="Center" HorizontalOptions="Center"
-                FontFamily="OpenSans_Semibold" FontSize="24" FontAttributes="Bold" />
-
         </VerticalStackLayout>
-    </ScrollView>
-
+    </ContentPage.Content>
 </ContentPage>
