@@ -17,7 +17,7 @@
                     TextColor="White"    
                 VerticalOptions="Center" HorizontalOptions="Center"
                 FontFamily="OpenSans_Semibold" FontSize="24" FontAttributes="Bold" />
-
+            
         </VerticalStackLayout>
     </ScrollView>
 

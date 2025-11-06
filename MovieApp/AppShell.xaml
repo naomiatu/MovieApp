@@ -4,34 +4,28 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:MovieApp"
-    Shell.FlyoutBehavior="Disabled">
-
+    Shell.FlyoutBehavior="Disabled"
+    Shell.NavBarIsVisible="False">
+    
     <TabBar>
-        <Tab Title="Home" Icon="home.png">
+        <Tab Title="Home" Icon="home">
             <ShellContent 
                 Title="Home"
                 ContentTemplate="{DataTemplate local:MainPage}"
                 Route="MainPage" />
         </Tab>
-
-        <Tab Title="Explore" Icon="explore.png">
-            <ShellContent 
-                Title="Explore"
-                ContentTemplate="{DataTemplate local:Explore}"
-                Route="ExplorePage" />
-        </Tab>
-
-        <Tab Title="Search" Icon="search.png">
+        
+        <Tab Title="Search" Icon="search">
             <ShellContent 
                 Title="Search"
                 ContentTemplate="{DataTemplate local:Search}"
                 Route="SearchPage" />
         </Tab>
-        <Tab Title="Settings" Icon="settings.png">
+        <Tab Title="Settings" Icon="settings">
             <ShellContent 
                 Title="Settings"
                 ContentTemplate="{DataTemplate local:Settings}"
-                Route="SearchPage" />
+                Route="SettingPage" />
         </Tab>
     </TabBar>
 
