@@ -7,6 +7,7 @@
     Shell.FlyoutBehavior="Disabled"
     Shell.NavBarIsVisible="False">
     
+    //Test
     <TabBar>
         <Tab Title="Home" Icon="home">
             <ShellContent 
