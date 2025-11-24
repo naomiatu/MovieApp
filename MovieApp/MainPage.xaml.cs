@@ -3,9 +3,10 @@
 public partial class MainPage : ContentPage
 {
 
-    public MainPage()
+    public MainPage(string userName)
     {
         InitializeComponent();
+        WelcomeLabel.Text = $"Hello, {userName}!";
     }
     
     

@@ -6,23 +6,22 @@
     xmlns:local="clr-namespace:MovieApp"
     Shell.FlyoutBehavior="Disabled"
     Shell.NavBarIsVisible="False">
-    
-    //Test
+
     <TabBar>
-        <Tab Title="Home" Icon="home">
+        <Tab Title="Home" Icon="home.png">
             <ShellContent 
                 Title="Home"
                 ContentTemplate="{DataTemplate local:MainPage}"
                 Route="MainPage" />
         </Tab>
-        
-        <Tab Title="Search" Icon="search">
+
+        <Tab Title="Search" Icon="search.png">
             <ShellContent 
                 Title="Search"
                 ContentTemplate="{DataTemplate local:Search}"
                 Route="SearchPage" />
         </Tab>
-        <Tab Title="Settings" Icon="settings">
+        <Tab Title="Settings" Icon="settings.png">
             <ShellContent 
                 Title="Settings"
                 ContentTemplate="{DataTemplate local:Settings}"

@@ -1,10 +1,14 @@
-﻿namespace MovieApp;
+﻿using MovieProject;
+
+namespace MovieApp;
 
 public partial class App : Application
 {
     public App()
     {
         InitializeComponent();
+        // Use NavigationPage to allow navigation
+        MainPage = new NavigationPage(new SplashPage());
 
     }
 
