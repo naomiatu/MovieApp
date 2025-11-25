@@ -3,15 +3,17 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MovieApp.Settings">
-    <ContentPage.Content>
-        <VerticalStackLayout
-            Spacing="25"
-            Padding="30,0"
-            VerticalOptions="Center">
-            <Label
-                Text="Shell Tab Layout" TextColor="White"
-                VerticalOptions="Center" HorizontalOptions="Center"
-                FontFamily="OpenSans_Semibold" FontSize="40" FontAttributes="Bold"/>
-        </VerticalStackLayout>
-    </ContentPage.Content>
+    <VerticalStackLayout
+        Spacing="25"
+        Padding="30,0"
+        VerticalOptions="Center">
+        <Label
+            Text="Settings Page" 
+            TextColor="White"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center"
+            FontFamily="OpenSans_Semibold" 
+            FontSize="40" 
+            FontAttributes="Bold"/>
+    </VerticalStackLayout>
 </ContentPage>

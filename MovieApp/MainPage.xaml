@@ -9,9 +9,11 @@
             Spacing="25"
             Padding="30,0"
             VerticalOptions="Center">
-            
-            <Label x:Name="WelcomeLabel" FontSize="24"/>
-            <Label Text="Enjoy your movie project!" />
+
+            <Label x:Name="WelcomeLabel" 
+                   FontSize="24"
+                   TextColor="White"
+                   HorizontalOptions="Center"/>
 
             <Label Text="Shell Tab Layout" 
                    TextColor="White"

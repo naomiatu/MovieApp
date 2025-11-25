@@ -4,10 +4,13 @@
              x:Class="MovieProject.SplashPage"
              Title="Welcome">
     <VerticalStackLayout Padding="30" Spacing="20" VerticalOptions="Center">
+        
         <Label Text="Welcome to Movie Project!" 
                FontSize="24" HorizontalOptions="Center"/>
+        
         <Label Text="Enter your name:"/>
         <Entry x:Name="NameEntry" Placeholder="Your Name"/>
+        
         <Button Text="Start" Clicked="StartButton_Click"/>
     </VerticalStackLayout>
 </ContentPage>

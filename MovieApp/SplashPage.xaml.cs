@@ -15,13 +15,6 @@ public partial class SplashPage : ContentPage
     public SplashPage()
     {
         InitializeComponent();
-
-        // Check if a name is already saved
-        if (Preferences.ContainsKey("username"))
-        {
-            string savedName = Preferences.Get("username", "");
-            OpenMainPage(savedName);
-        }
     }
 
     private void StartButton_Click(object sender, EventArgs e)
@@ -30,21 +23,19 @@ public partial class SplashPage : ContentPage
 
         if (!string.IsNullOrEmpty(name))
         {
-            // Save the name using Preferences
+           
             Preferences.Set("username", name);
 
-            OpenMainPage(name);
+        
+            var window = Application.Current?.Windows[0];
+            if (window != null)
+            {
+                window.Page = new AppShell();
+            }
         }
         else
         {
             DisplayAlert("Input Required", "Please enter your name.", "OK");
         }
-    }
-
-    private async void OpenMainPage(string name)
-    {
-        await Navigation.PushAsync(new MainPage(name));
-        // Optionally remove SplashPage from the navigation stack
-        Navigation.RemovePage(this);
     }
 }
