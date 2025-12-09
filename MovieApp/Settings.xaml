@@ -2,18 +2,185 @@
 
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MovieApp.Settings">
-    <VerticalStackLayout
-        Spacing="25"
-        Padding="30,0"
-        VerticalOptions="Center">
-        <Label
-            Text="Settings Page" 
-            TextColor="White"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center"
-            FontFamily="OpenSans_Semibold" 
-            FontSize="40" 
-            FontAttributes="Bold"/>
-    </VerticalStackLayout>
+             x:Class="MovieApp.Settings"
+             x:Name="ThisPage"
+              BackgroundColor="{Binding BackgroundColor}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="0">
+
+            <!-- Header -->
+            <Grid Padding="20,50,20,20" ColumnDefinitions="40,*,40">
+                <Button Grid.Column="0"
+                        Text="←"
+                        FontSize="24"
+                        TextColor="{Binding TextColor}"
+                        BackgroundColor="Transparent"
+                        Clicked="Back_Clicked"/>
+
+                <Label Grid.Column="1"
+                       Text="Settings"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="{Binding TextColor}"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Grid>
+
+            <!-- General Section -->
+            <Label Text="General"
+                   FontSize="14"
+                   TextColor="{Binding SectionHeaderColor}"
+                   Margin="20,10,20,10"
+                   FontAttributes="Bold"/>
+
+            <!-- Leave Feedback Card -->
+            <Frame BackgroundColor="{Binding CardBackgroundColor}"
+                   Padding="15"
+                   Margin="20,5,20,5"
+                   CornerRadius="12"
+                   HasShadow="False">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="LeaveFeedback_Tapped"/>
+                </Frame.GestureRecognizers>
+
+                <Grid ColumnDefinitions="40,*">
+                    <Frame Grid.Column="0"
+                           WidthRequest="40"
+                           HeightRequest="40"
+                           CornerRadius="20"
+                           Padding="0"
+                           BackgroundColor="{Binding IconBackgroundColor}"
+                           HasShadow="False"
+                           VerticalOptions="Center">
+                        <Label Text="👍"
+                               FontSize="20"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <VerticalStackLayout Grid.Column="1" 
+                                        Spacing="2"
+                                        VerticalOptions="Center">
+                        <Label Text="Leave feedback"
+                               FontSize="16"
+                               TextColor="{Binding TextColor}"
+                               FontAttributes="Bold"/>
+                        <Label Text="Hilf uns dabei unsere App zu verbessern"
+                               FontSize="12"
+                               TextColor="{Binding SubtextColor}"/>
+                    </VerticalStackLayout>
+                </Grid>
+            </Frame>
+
+            <!-- Switch Themes Card -->
+            <Frame BackgroundColor="{Binding CardBackgroundColor}"
+                   Padding="15"
+                   Margin="20,5,20,5"
+                   CornerRadius="12"
+                   HasShadow="False">
+                <Grid ColumnDefinitions="40,*,Auto">
+                    <Frame Grid.Column="0"
+                           WidthRequest="40"
+                           HeightRequest="40"
+                           CornerRadius="20"
+                           Padding="0"
+                           BackgroundColor="{Binding IconBackgroundColor}"
+                           HasShadow="False"
+                           VerticalOptions="Center">
+                        <Label Text="🌓"
+                               FontSize="20"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <Label Grid.Column="1"
+                           Text="Switch themes"
+                           FontSize="16"
+                           TextColor="{Binding TextColor}"
+                           FontAttributes="Bold"
+                           VerticalOptions="Center"/>
+
+                    <Switch Grid.Column="2"
+                            x:Name="ThemeSwitch"
+                            OnColor="#4CAF50"
+                            ThumbColor="White"
+                            VerticalOptions="Center"
+                            Toggled="ThemeSwitch_Toggled"/>
+                </Grid>
+            </Frame>
+
+            <!-- Clear Cache Card -->
+            <Frame BackgroundColor="{Binding CardBackgroundColor}"
+                   Padding="15"
+                   Margin="20,5,20,5"
+                   CornerRadius="12"
+                   HasShadow="False">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="ClearCache_Tapped"/>
+                </Frame.GestureRecognizers>
+
+                <Grid ColumnDefinitions="40,*">
+                    <Frame Grid.Column="0"
+                           WidthRequest="40"
+                           HeightRequest="40"
+                           CornerRadius="20"
+                           Padding="0"
+                           BackgroundColor="{Binding IconBackgroundColor}"
+                           HasShadow="False"
+                           VerticalOptions="Center">
+                        <Label Text="⊕"
+                               FontSize="24"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"
+                               TextColor="{Binding TextColor}"/>
+                    </Frame>
+
+                    <Label Grid.Column="1"
+                           Text="Clear cache"
+                           FontSize="16"
+                           TextColor="{Binding TextColor}"
+                           FontAttributes="Bold"
+                           VerticalOptions="Center"/>
+                </Grid>
+            </Frame>
+
+
+            <!-- Sign Out Card -->
+            <Frame BackgroundColor="{Binding CardBackgroundColor}"
+                   Padding="15"
+                   Margin="20,20,20,30"
+                   CornerRadius="12"
+                   HasShadow="False">
+                <Frame.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="SignOut_Tapped"/>
+                </Frame.GestureRecognizers>
+
+                <Grid ColumnDefinitions="40,*">
+                    <Frame Grid.Column="0"
+                           WidthRequest="40"
+                           HeightRequest="40"
+                           CornerRadius="20"
+                           Padding="0"
+                           BackgroundColor="{Binding IconBackgroundColor}"
+                           HasShadow="False"
+                           VerticalOptions="Center">
+                        <Label Text="🚪"
+                               FontSize="20"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Frame>
+
+                    <Label Grid.Column="1"
+                           Text="Sign out"
+                           FontSize="16"
+                           TextColor="{Binding TextColor}"
+                           FontAttributes="Bold"
+                           VerticalOptions="Center"/>
+                </Grid>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
 </ContentPage>
