@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MovieApp.MovieDetailsPage"
+             x:Name="ThisPage"
+             BackgroundColor="#0F0F0F">
+
+    <Grid>
+        <!-- Background Gradient -->
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#1a1a1a" Offset="0.0"/>
+                    <GradientStop Color="#0F0F0F" Offset="1.0"/>
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
+        <ScrollView>
+            <VerticalStackLayout Spacing="0">
+
+                <!-- Header with Back Button -->
+                <Grid Padding="20,50,20,20" ColumnDefinitions="40,*,40">
+                    <Button Grid.Column="0"
+                            Text="←"
+                            FontSize="28"
+                            TextColor="White"
+                            BackgroundColor="Transparent"
+                            Clicked="Back_Clicked"/>
+
+                    <Label Grid.Column="1"
+                           Text="Movie Details"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                </Grid>
+
+                <!-- Movie Poster with Play Button Overlay -->
+                <Grid Margin="20,0,20,20" HeightRequest="400">
+                    <Frame CornerRadius="20" 
+                           Padding="0"
+                           HasShadow="True">
+                        <Image x:Name="MoviePoster"
+                               Source="dotnet_bot.png"
+                               Aspect="AspectFill"/>
+                    </Frame>
+
+                    <!-- Play Button Overlay -->
+                    <Frame CornerRadius="35"
+                           WidthRequest="70"
+                           HeightRequest="70"
+                           Padding="0"
+                           BackgroundColor="#40FFFFFF"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           HasShadow="True">
+                        <Button Text="▶"
+                                FontSize="30"
+                                TextColor="White"
+                                BackgroundColor="Transparent"
+                                Clicked="PlayMovie_Clicked"/>
+                    </Frame>
+                </Grid>
+
+                <!-- Movie Title and Info -->
+                <VerticalStackLayout Padding="20,0" Spacing="10">
+                    <Label x:Name="MovieTitle"
+                           Text="Dora and the lost city of gold"
+                           FontSize="26"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           LineBreakMode="WordWrap"/>
+
+                    <Label x:Name="MovieGenres"
+                           Text="Movie | Adventure | Comedy | Family"
+                           FontSize="13"
+                           TextColor="#999"
+                           Margin="0,0,0,10"/>
+
+                    <!-- Rating Section -->
+                    <HorizontalStackLayout Spacing="15">
+                        <Label x:Name="MovieRating"
+                               Text="4.0"
+                               FontSize="32"
+                               FontAttributes="Bold"
+                               TextColor="White"
+                               VerticalOptions="Center"/>
+
+                        <VerticalStackLayout Spacing="5" VerticalOptions="Center">
+                            <HorizontalStackLayout Spacing="3">
+                                <Label x:Name="StarIcon1" Text="★" FontSize="16" TextColor="#FFB800"/>
+                                <Label x:Name="StarIcon2" Text="★" FontSize="16" TextColor="#FFB800"/>
+                                <Label x:Name="StarIcon3" Text="★" FontSize="16" TextColor="#666"/>
+                                <Label x:Name="StarIcon4" Text="★" FontSize="16" TextColor="#666"/>
+                                <Label x:Name="StarIcon5" Text="★" FontSize="16" TextColor="#666"/>
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+
+                    <!-- Description -->
+                    <Label x:Name="MovieDescription"
+                           Text="Having spent most of her life exploring the jungle, nothing could prepare Dora for her most dangerous adventure yet — high school."
+                           FontSize="14"
+                           TextColor="#CCC"
+                           LineBreakMode="WordWrap"
+                           Margin="0,15,0,0"/>
+
+                    <!-- Watch Now Button -->
+                    <Button Text="WATCH NOW"
+                            BackgroundColor="#FFB800"
+                            TextColor="Black"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            Margin="0,20,0,0"
+                            Clicked="WatchNow_Clicked"/>
+                </VerticalStackLayout>
+
+                <!-- Cast Section -->
+                <VerticalStackLayout Padding="20" Spacing="15" Margin="0,20,0,0">
+                    <Label Text="Cast"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+
+                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                        <HorizontalStackLayout Spacing="15" x:Name="CastContainer">
+
+                            <!-- Cast Member Template (repeated) -->
+                            <VerticalStackLayout Spacing="8" WidthRequest="100">
+                                <Frame CornerRadius="50" 
+                                       Padding="0" 
+                                       WidthRequest="100"
+                                       HeightRequest="100"
+                                       HorizontalOptions="Center"
+                                       HasShadow="False"
+                                       BorderColor="#333"
+                                       BackgroundColor="#222">
+                                    <Image Source="dotnet_bot.png" 
+                                           Aspect="AspectFill"/>
+                                </Frame>
+                                <Label Text="Isabela Moner"
+                                       FontSize="12"
+                                       TextColor="White"
+                                       HorizontalTextAlignment="Center"
+                                       LineBreakMode="WordWrap"/>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="8" WidthRequest="100">
+                                <Frame CornerRadius="50" 
+                                       Padding="0" 
+                                       WidthRequest="100"
+                                       HeightRequest="100"
+                                       HorizontalOptions="Center"
+                                       HasShadow="False"
+                                       BorderColor="#333"
+                                       BackgroundColor="#222">
+                                    <Image Source="dotnet_bot.png" 
+                                           Aspect="AspectFill"/>
+                                </Frame>
+                                <Label Text="Michael Peña"
+                                       FontSize="12"
+                                       TextColor="White"
+                                       HorizontalTextAlignment="Center"
+                                       LineBreakMode="WordWrap"/>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="8" WidthRequest="100">
+                                <Frame CornerRadius="50" 
+                                       Padding="0" 
+                                       WidthRequest="100"
+                                       HeightRequest="100"
+                                       HorizontalOptions="Center"
+                                       HasShadow="False"
+                                       BorderColor="#333"
+                                       BackgroundColor="#222">
+                                    <Image Source="dotnet_bot.png" 
+                                           Aspect="AspectFill"/>
+                                </Frame>
+                                <Label Text="Eva Longoria"
+                                       FontSize="12"
+                                       TextColor="White"
+                                       HorizontalTextAlignment="Center"
+                                       LineBreakMode="WordWrap"/>
+                            </VerticalStackLayout>
+
+                        </HorizontalStackLayout>
+                    </ScrollView>
+
+                    <!-- Rate Button -->
+                    <Button Text="⭐ Rate this movie"
+                            BackgroundColor="#FFB800"
+                            TextColor="Black"
+                            CornerRadius="30"
+                            WidthRequest="60"
+                            HeightRequest="60"
+                            FontSize="24"
+                            HorizontalOptions="End"
+                            VerticalOptions="End"
+                            Margin="0,-30,0,0"
+                            Clicked="RateMovie_Clicked"/>
+                </VerticalStackLayout>
+
+                <!-- Watching Section -->
+                <VerticalStackLayout Padding="20" Spacing="15" Margin="0,20,0,30">
+                    <Label Text="Watching"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+
+                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                        <HorizontalStackLayout Spacing="15">
+
+                            <!-- Movie Card 1 -->
+                            <Frame CornerRadius="12" 
+                                   Padding="0" 
+                                   HasShadow="True"
+                                   WidthRequest="140"
+                                   HeightRequest="200"
+                                   BackgroundColor="#1a1a1a">
+                                <Image Source="dotnet_bot.png" 
+                                       Aspect="AspectFill"/>
+                            </Frame>
+
+                            <!-- Movie Card 2 -->
+                            <Frame CornerRadius="12" 
+                                   Padding="0" 
+                                   HasShadow="True"
+                                   WidthRequest="140"
+                                   HeightRequest="200"
+                                   BackgroundColor="#1a1a1a">
+                                <Image Source="dotnet_bot.png" 
+                                       Aspect="AspectFill"/>
+                            </Frame>
+
+                            <!-- Movie Card 3 -->
+                            <Frame CornerRadius="12" 
+                                   Padding="0" 
+                                   HasShadow="True"
+                                   WidthRequest="140"
+                                   HeightRequest="200"
+                                   BackgroundColor="#1a1a1a">
+                                <Image Source="dotnet_bot.png" 
+                                       Aspect="AspectFill"/>
+                            </Frame>
+
+                        </HorizontalStackLayout>
+                    </ScrollView>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+
+</ContentPage>
