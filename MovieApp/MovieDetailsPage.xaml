@@ -19,7 +19,7 @@
         <ScrollView>
             <VerticalStackLayout Spacing="0">
 
-                <!-- Header with Back Button -->
+                <!-- Header with a Back Button -->
                 <Grid Padding="20,50,20,20" ColumnDefinitions="40,*,40">
                     <Button Grid.Column="0"
                             Text="←"
