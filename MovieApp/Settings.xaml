@@ -4,7 +4,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MovieApp.Settings"
              x:Name="ThisPage"
-              BackgroundColor="{Binding BackgroundColor}">
+             BackgroundColor="{Binding BackgroundColor}">
 
     <ScrollView>
         <VerticalStackLayout Spacing="0">
@@ -35,29 +35,27 @@
                    FontAttributes="Bold"/>
 
             <!-- Leave Feedback Card -->
-            <Frame BackgroundColor="{Binding CardBackgroundColor}"
-                   Padding="15"
-                   Margin="20,5,20,5"
-                   CornerRadius="12"
-                   HasShadow="False">
-                <Frame.GestureRecognizers>
+            <Border BackgroundColor="{Binding CardBackgroundColor}"
+                    Padding="15"
+                    Margin="20,5,20,5"
+                    StrokeShape="RoundRectangle 40,40,40,40">
+                <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="LeaveFeedback_Tapped"/>
-                </Frame.GestureRecognizers>
+                </Border.GestureRecognizers>
 
                 <Grid ColumnDefinitions="40,*">
-                    <Frame Grid.Column="0"
-                           WidthRequest="40"
-                           HeightRequest="40"
-                           CornerRadius="20"
-                           Padding="0"
-                           BackgroundColor="{Binding IconBackgroundColor}"
-                           HasShadow="False"
-                           VerticalOptions="Center">
+                    <Border Grid.Column="0"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            StrokeShape="RoundRectangle"
+                            Padding="0"
+                            BackgroundColor="{Binding IconBackgroundColor}"
+                            VerticalOptions="Center">
                         <Label Text="👍"
                                FontSize="20"
                                HorizontalOptions="Center"
                                VerticalOptions="Center"/>
-                    </Frame>
+                    </Border>
 
                     <VerticalStackLayout Grid.Column="1" 
                                         Spacing="2"
@@ -66,33 +64,31 @@
                                FontSize="16"
                                TextColor="{Binding TextColor}"
                                FontAttributes="Bold"/>
-                        <Label Text="Hilf uns dabei unsere App zu verbessern"
+                        <Label Text="Please leave your opions   "
                                FontSize="12"
                                TextColor="{Binding SubtextColor}"/>
                     </VerticalStackLayout>
                 </Grid>
-            </Frame>
+            </Border>
 
             <!-- Switch Themes Card -->
-            <Frame BackgroundColor="{Binding CardBackgroundColor}"
-                   Padding="15"
-                   Margin="20,5,20,5"
-                   CornerRadius="12"
-                   HasShadow="False">
+            <Border BackgroundColor="{Binding CardBackgroundColor}"
+                    Padding="15"
+                    Margin="20,5,20,5"
+                    StrokeShape="RoundRectangle 40,40,40,40">
                 <Grid ColumnDefinitions="40,*,Auto">
-                    <Frame Grid.Column="0"
-                           WidthRequest="40"
-                           HeightRequest="40"
-                           CornerRadius="20"
-                           Padding="0"
-                           BackgroundColor="{Binding IconBackgroundColor}"
-                           HasShadow="False"
-                           VerticalOptions="Center">
+                    <Border Grid.Column="0"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            StrokeShape="RoundRectangle"
+                            Padding="0"
+                            BackgroundColor="{Binding IconBackgroundColor}"
+                            VerticalOptions="Center">
                         <Label Text="🌓"
                                FontSize="20"
                                HorizontalOptions="Center"
                                VerticalOptions="Center"/>
-                    </Frame>
+                    </Border>
 
                     <Label Grid.Column="1"
                            Text="Switch themes"
@@ -108,33 +104,31 @@
                             VerticalOptions="Center"
                             Toggled="ThemeSwitch_Toggled"/>
                 </Grid>
-            </Frame>
+            </Border>
 
             <!-- Clear Cache Card -->
-            <Frame BackgroundColor="{Binding CardBackgroundColor}"
-                   Padding="15"
-                   Margin="20,5,20,5"
-                   CornerRadius="12"
-                   HasShadow="False">
-                <Frame.GestureRecognizers>
+            <Border BackgroundColor="{Binding CardBackgroundColor}"
+                    Padding="15"
+                    Margin="20,5,20,5"
+                    StrokeShape="RoundRectangle 40,40,40,40">
+                <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="ClearCache_Tapped"/>
-                </Frame.GestureRecognizers>
+                </Border.GestureRecognizers>
 
                 <Grid ColumnDefinitions="40,*">
-                    <Frame Grid.Column="0"
-                           WidthRequest="40"
-                           HeightRequest="40"
-                           CornerRadius="20"
-                           Padding="0"
-                           BackgroundColor="{Binding IconBackgroundColor}"
-                           HasShadow="False"
-                           VerticalOptions="Center">
+                    <Border Grid.Column="0"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            StrokeShape="RoundRectangle"
+                            Padding="0"
+                            BackgroundColor="{Binding IconBackgroundColor}"
+                            VerticalOptions="Center">
                         <Label Text="⊕"
                                FontSize="24"
                                HorizontalOptions="Center"
                                VerticalOptions="Center"
                                TextColor="{Binding TextColor}"/>
-                    </Frame>
+                    </Border>
 
                     <Label Grid.Column="1"
                            Text="Clear cache"
@@ -143,33 +137,30 @@
                            FontAttributes="Bold"
                            VerticalOptions="Center"/>
                 </Grid>
-            </Frame>
-
+            </Border>
 
             <!-- Sign Out Card -->
-            <Frame BackgroundColor="{Binding CardBackgroundColor}"
-                   Padding="15"
-                   Margin="20,20,20,30"
-                   CornerRadius="12"
-                   HasShadow="False">
-                <Frame.GestureRecognizers>
+            <Border BackgroundColor="{Binding CardBackgroundColor}"
+                    Padding="15"
+                    Margin="20,20,20,30"
+                    StrokeShape="RoundRectangle 40,40,40,40">
+                <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="SignOut_Tapped"/>
-                </Frame.GestureRecognizers>
+                </Border.GestureRecognizers>
 
                 <Grid ColumnDefinitions="40,*">
-                    <Frame Grid.Column="0"
-                           WidthRequest="40"
-                           HeightRequest="40"
-                           CornerRadius="20"
-                           Padding="0"
-                           BackgroundColor="{Binding IconBackgroundColor}"
-                           HasShadow="False"
-                           VerticalOptions="Center">
+                    <Border Grid.Column="0"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            StrokeShape="RoundRectangle"
+                            Padding="0"
+                            BackgroundColor="{Binding IconBackgroundColor}"
+                            VerticalOptions="Center">
                         <Label Text="🚪"
                                FontSize="20"
                                HorizontalOptions="Center"
                                VerticalOptions="Center"/>
-                    </Frame>
+                    </Border>
 
                     <Label Grid.Column="1"
                            Text="Sign out"
@@ -178,7 +169,7 @@
                            FontAttributes="Bold"
                            VerticalOptions="Center"/>
                 </Grid>
-            </Frame>
+            </Border>
 
         </VerticalStackLayout>
     </ScrollView>

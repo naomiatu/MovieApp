@@ -159,9 +159,12 @@ namespace MovieApp;
                 // Clear user preferences
                 Preferences.Remove("username");
 
-                // Navigate back to splash screen
-                Application.Current.MainPage = new NavigationPage(new SplashPage());
+            // Navigate back to splash screen
+            if (Application.Current.Windows.Count > 0)
+            {
+                Application.Current.Windows[0].Page = new NavigationPage(new SplashPage());
             }
+        }
         }
 
         public new event PropertyChangedEventHandler? PropertyChanged;
