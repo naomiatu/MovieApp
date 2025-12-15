@@ -7,6 +7,8 @@ using Microsoft.Maui.Graphics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls.Shapes;
+using System.ComponentModel;
 namespace MovieApp;
 
 public partial class MovieDetailsPage : ContentPage
@@ -218,47 +220,20 @@ SaveReview()
 
     private VerticalStackLayout CreateCastMember(string actorName)
     {
-        var container = new VerticalStackLayout
+        var border = new Border
         {
-            Spacing = 8,
-            WidthRequest = 100
-        };
-
-        var frame = new Frame
-        {
-            CornerRadius = 50,
+            StrokeShape = new RoundRectangle { CornerRadius = 50 },
             Padding = 0,
             WidthRequest = 100,
             HeightRequest = 100,
             HorizontalOptions = LayoutOptions.Center,
-            HasShadow = false,
-            BorderColor = Color.FromArgb("#333"),
-            BackgroundColor = Color.FromArgb("#222")
+            Stroke = Color.FromArgb("#333"),
+            BackgroundColor = Color.FromArgb("#222"),
+            Shadow = null // optional: remove shadow
         };
 
-        // Try to load actor image, fallback to placeholder
-        var actorImageName = actorName.ToLower().Replace(" ", "_").Replace(".", "") + ".jpg";
-        var image = new Image
-        {
-            Source = actorImageName,
-            Aspect = Aspect.AspectFill
-        };
-
-        frame.Content = image;
-        container.Children.Add(frame);
-
-        var label = new Label
-        {
-            Text = actorName,
-            FontSize = 12,
-            TextColor = Colors.White,
-            HorizontalTextAlignment = TextAlignment.Center,
-            LineBreakMode = LineBreakMode.WordWrap
-        };
-
-        container.Children.Add(label);
-
-        return container;
+        border.Content = image;
+        container.Children.Add(border)
     }
 
     private async void Star_Clicked(object sender, EventArgs e)
