@@ -2,16 +2,114 @@
 
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MovieApp.Search">
-    <ContentPage.Content>
-        <VerticalStackLayout
-            Spacing="25"
-            Padding="30,0"
-            VerticalOptions="Center">
-            <Label
-                Text="Shell Tab Layout" TextColor="White"
-                VerticalOptions="Center" HorizontalOptions="Center"
-                FontFamily="OpenSans_Semibold" FontSize="40" FontAttributes="Bold"/>
+             x:Class="MovieApp.Search"
+             BackgroundColor="#0F0F0F">
+
+    <Grid>
+    <!-- Background Gradient -->
+    <BoxView>
+        <BoxView.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#1a1a1a" Offset="0.0"/>
+                <GradientStop Color="#0F0F0F" Offset="1.0"/>
+            </LinearGradientBrush>
+        </BoxView.Background>
+    </BoxView>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="20,50,20,20">
+
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,0,0,20">
+                <Label Text="Browse &amp; Review"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       TextColor="White"/>  
+                <Label Text="Watch trailers and share your ratings"
+                       FontSize="14"
+                       TextColor="#999"/>
         </VerticalStackLayout>
-    </ContentPage.Content>
+
+            <!-- Search Bar -->
+            <Border Grid.Row="1"
+        Padding="10"
+        BackgroundColor="#1a1a1a"
+        Stroke="#333"
+        Margin="0,0,0,15">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="15"/>
+                </Border.StrokeShape>
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <Entry x:Name="SearchEntry"
+               Placeholder="Search movies..."
+               PlaceholderColor="#666"
+               TextColor="White"
+               BackgroundColor="Transparent"
+               TextChanged="SearchEntry_TextChanged"/>
+
+                    <Button x:Name="ClearButton"
+                Grid.Column="1"
+                Text="✕"
+                IsVisible="False"
+                BackgroundColor="Transparent"
+                TextColor="#999"
+                Clicked="ClearSearch_Clicked"/>
+                </Grid>
+            </Border>
+
+
+            <!-- Genre Filter Section -->
+        <VerticalStackLayout Grid.Row="2" Spacing="10" Margin="0,0,0,15">
+            <Label Text="Filter by Genre"
+                       FontSize="14"
+                       TextColor="#999"
+                       FontAttributes="Bold"/>
+
+            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout x:Name="GenreChipsContainer" Spacing="10">
+                    <!-- Genre chips will be added dynamically -->
+                </HorizontalStackLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+
+        <!-- Results Section -->
+        <Grid Grid.Row="3">
+            <!-- Loading Indicator -->
+            <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   IsVisible="False"
+                                   Color="#FFB800"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center"/>
+
+            <!-- No Results Message -->
+            <VerticalStackLayout x:Name="NoResultsView"
+                                     IsVisible="False"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="15">
+                <Label Text="🎬"
+                           FontSize="60"
+                           HorizontalOptions="Center"/>
+                <Label Text="No movies found"
+                           FontSize="18"
+                           TextColor="#999"
+                           HorizontalOptions="Center"/>
+                <Label Text="Try different search terms or filters"
+                           FontSize="14"
+                           TextColor="#666"
+                           HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+
+            <!-- Movies List -->
+            <ScrollView x:Name="ResultsScrollView">
+                <VerticalStackLayout x:Name="MoviesContainer" Spacing="15">
+                    <!-- Movie items will be added dynamically -->
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+
+    </Grid>
+    </Grid>
 </ContentPage>
