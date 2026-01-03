@@ -1,72 +1,56 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace MovieApp
 {
+    /// <summary>
+    /// Movie data model representing a movie entity
+    /// </summary>
     public class Movie
     {
-        public string name { get; set; }
-        public string storyline { get; set; }
-        public List<string> actors { get; set; }
-        [JsonPropertyName("categories")]
-        public List<string> genre { get; set; }
-        [JsonPropertyName("release-date")]
-        public string releaseDate { get; set; }
+        [JsonPropertyName("title")]
+        public string title { get; set; }
 
-        public double imDbRating { get; set; }
+        [JsonPropertyName("year")]
         public int year { get; set; }
-        public string trailerUrl { get; set; }
-        public int runtime { get; set; }
+
+        [JsonPropertyName("genre")]
+        public List<string> genre { get; set; }
+
+        [JsonPropertyName("director")]
         public string director { get; set; }
-        public string mpaaRating { get; set; }
-        // Generate image filename from movie name if not provided
-        private string _imageFileName;
-        public string ImageFileName
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(_imageFileName))
-                    return _imageFileName;
 
-                // Generate from movie name
-                if (!string.IsNullOrEmpty(name))
-                {
-                    return name.ToLower()
-                        .Replace(" ", "_")
-                        .Replace(":", "")
-                        .Replace("&", "and")
-                        .Replace("'", "")
-                        .Replace(",", "")
-                        + ".jpg";
-                }
-                return "placeholder.jpg";
-            }
-            set { _imageFileName = value; }
-        }
+        [JsonPropertyName("rating")]
+        public double rating { get; set; }
 
-        // Property to get formatted genres
-        public string FormattedGenres
-        {
-            get
-            {
-                if (genre == null || genre.Count == 0)
-                    return "Movie";
+        [JsonPropertyName("emoji")]
+        public string emoji { get; set; }
 
-                return "Movie | " + string.Join(" | ", genre);
-            }
-        }
+        [JsonPropertyName("poster")]
+        public string poster { get; set; }
 
-        public string FormattedRuntime => runtime > 0
-            ? $"{runtime} min"
-            : "Unknown";
+        [JsonPropertyName("storyline")]
+        public string storyline { get; set; }
 
-        public string FormattedRating => imDbRating > 0
-            ? $"⭐ {imDbRating}/10"
-            : "Not rated";
+        // Computed properties for UI display
 
-        public string FormattedYear => year > 0
-            ? year.ToString()
+        /// <summary>
+        /// Gets the movie name (same as title)
+        /// </summary>
+        public string name => title;
+
+        /// <summary>
+        /// Gets the image file name from poster property
+        /// </summary>
+        public string ImageFileName => poster;
+
+        /// <summary>
+        /// Gets formatted genre string for display
+        /// </summary>
+        public string FormattedGenres => genre != null && genre.Count > 0
+            ? string.Join(" | ", genre)
             : "Unknown";
     }
 }

@@ -2,30 +2,253 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MovieApp.MainPage"
-             Title="Movie Project">
+             BackgroundColor="#0F0F0F">
 
-    <ScrollView>
-        <VerticalStackLayout
-            Spacing="25"
-            Padding="30,0"
-            VerticalOptions="Center">
+    <Grid RowDefinitions="Auto,*">
 
-            <Label x:Name="WelcomeLabel" 
-                   FontSize="24"
-                   TextColor="White"
-                   HorizontalOptions="Center"/>
+        <!-- Background Gradient -->
+        <BoxView Grid.RowSpan="2">
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#1a1a1a" Offset="0.0"/>
+                    <GradientStop Color="#0F0F0F" Offset="1.0"/>
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
 
-            <Label Text="Shell Tab Layout" 
-                   TextColor="White"
-                   VerticalOptions="Center" HorizontalOptions="Center"
-                   FontFamily="OpenSans_Semibold" FontSize="40" FontAttributes="Bold"/>
+        <!-- MAIN CONTENT -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
 
-            <Label Text="Click a tab below to navigate."
-                   TextColor="White"
-                   VerticalOptions="Center" HorizontalOptions="Center"
-                   FontFamily="OpenSans_Semibold" FontSize="24" FontAttributes="Bold"/>
-            
-        </VerticalStackLayout>
-    </ScrollView>
+                <!-- Header -->
+                <VerticalStackLayout Spacing="5" Margin="0,30,0,20">
+                    <Label x:Name="WelcomeLabel"
+                           Text="Hello, Guest!"
+                           FontSize="32"
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+                    <Label Text="Welcome back to your cinema"
+                           FontSize="16"
+                           TextColor="#999"/>
+                </VerticalStackLayout>
 
+                <!-- Stats Cards -->
+                <Grid ColumnDefinitions="*,*"
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="15"
+                      RowSpacing="15">
+
+                    <!-- Total Movies -->
+                    <Border Grid.Row="0" Grid.Column="0"
+                            BackgroundColor="#1a1a1a"
+                            Stroke="#FFB800"
+                            StrokeThickness="1"
+                            Padding="20">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="15"/>
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="🎬" FontSize="32" HorizontalOptions="Center"/>
+                            <Label x:Name="TotalMoviesLabel"
+                                   Text="0"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="#FFB800"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Total Movies"
+                                   FontSize="12"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Watched -->
+                    <Border Grid.Row="0" Grid.Column="1"
+                            BackgroundColor="#1a1a1a"
+                            Stroke="#4CAF50"
+                            StrokeThickness="1"
+                            Padding="20">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="15"/>
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="✓" FontSize="32" TextColor="#4CAF50" HorizontalOptions="Center"/>
+                            <Label x:Name="WatchedCountLabel"
+                                   Text="0"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="#4CAF50"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Watched"
+                                   FontSize="12"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Reviews -->
+                    <Border Grid.Row="1" Grid.Column="0"
+                            BackgroundColor="#1a1a1a"
+                            Stroke="#FF6B00"
+                            StrokeThickness="1"
+                            Padding="20">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="15"/>
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="⭐" FontSize="32" HorizontalOptions="Center"/>
+                            <Label x:Name="ReviewsCountLabel"
+                                   Text="0"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="#FF6B00"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Reviews"
+                                   FontSize="12"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Avg Rating -->
+                    <Border Grid.Row="1" Grid.Column="1"
+                            BackgroundColor="#1a1a1a"
+                            Stroke="#2196F3"
+                            StrokeThickness="1"
+                            Padding="20">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="15"/>
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="📊" FontSize="32" HorizontalOptions="Center"/>
+                            <Label x:Name="AverageRatingLabel"
+                                   Text="0.0"
+                                   FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="#2196F3"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Avg Rating"
+                                   FontSize="12"
+                                   TextColor="#999"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                </Grid>
+
+                <!-- Top Rated Header -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="⭐ Top Rated Movies"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+
+                    <Label Grid.Column="1"
+                           Text="See All →"
+                           FontSize="14"
+                           TextColor="#FFB800"
+                           VerticalOptions="Center">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="SeeAllTopRated_Clicked"/>
+                        </Label.GestureRecognizers>
+                    </Label>
+                </Grid>
+
+                <!-- Top Rated Movies -->
+                <ScrollView Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never">
+                    <HorizontalStackLayout x:Name="TopRatedContainer"
+                                           Spacing="15"/>
+                </ScrollView>
+
+                <!-- Recent Reviews -->
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="📝 Your Recent Reviews"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+
+                    <VerticalStackLayout x:Name="RecentReviewsContainer"
+                                         Spacing="12">
+                        <Label x:Name="NoReviewsLabel"
+                               Text="No reviews yet. Start reviewing movies!"
+                               FontSize="14"
+                               TextColor="#666"
+                               HorizontalOptions="Center"
+                               Margin="0,20"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+                <!-- Quick Actions -->
+                <VerticalStackLayout Spacing="15" Margin="0,10,0,20">
+                    <Label Text="🚀 Quick Actions"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
+
+                        <Border Grid.Column="0"
+                                BackgroundColor="#FFB800"
+                                Padding="20,15">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12"/>
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="BrowseMovies_Clicked"/>
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                                <Label Text="🔍" FontSize="24"/>
+                                <Label Text="Browse"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="Black"/>
+                            </HorizontalStackLayout>
+                        </Border>
+
+                        <Border Grid.Column="1"
+                                BackgroundColor="#1a1a1a"
+                                Stroke="#FFB800"
+                                StrokeThickness="2"
+                                Padding="20,15">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12"/>
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="RandomMovie_Clicked"/>
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                                <Label Text="🎲" FontSize="24"/>
+                                <Label Text="Random"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#FFB800"/>
+                            </HorizontalStackLayout>
+                        </Border>
+
+                    </Grid>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- LOADING OVERLAY -->
+        <Grid x:Name="LoadingOverlay"
+              Grid.RowSpan="2"
+              IsVisible="False"
+              BackgroundColor="#80000000">
+            <VerticalStackLayout VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="15">
+                <ActivityIndicator IsRunning="True"
+                                   Color="#FFB800"
+                                   WidthRequest="50"
+                                   HeightRequest="50"/>
+                <Label Text="Loading your cinema..."
+                       FontSize="16"
+                       TextColor="White"/>
+            </VerticalStackLayout>
+        </Grid>
+
+    </Grid>
 </ContentPage>

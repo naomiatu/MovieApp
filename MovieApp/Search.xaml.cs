@@ -2,448 +2,441 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Shapes;
+using MovieProject;
 
-namespace MovieApp;
-
-public partial class Search : ContentPage
+namespace MovieApp
 {
-    private List<Movie> _allMovies;
-    private List<Movie> _filteredMovies;
-    private HashSet<string> _selectedGenres = new HashSet<string>();
-    private string _searchText = "";
-
-    public Search()
+    public partial class Search : ContentPage
     {
-        InitializeComponent();
-        LoadMovies();
-    }
+        private List<Movie> _allMovies = new();
+        private List<Movie> _filteredMovies = new();
+        private HashSet<string> _selectedGenres = new();
+        private bool _isNavigating;
+        private string _searchText = "";
 
-    protected override async void OnAppearing()
-    {
-        base.OnAppearing();
-        await LoadMovies();
-    }
+        private CancellationTokenSource _searchDebounceToken;
 
-    private async Task LoadMovies()
-    {
-        try
+        // Genre to Emoji mapping
+        private static readonly Dictionary<string, string> GenreEmojis = new()
         {
-            LoadingIndicator.IsVisible = true;
-            LoadingIndicator.IsRunning = true;
-            ResultsScrollView.IsVisible = false;
-            NoResultsView.IsVisible = false;
+            { "Action", "💥" },
+            { "Adventure", "🗺️" },
+            { "Animation", "🎨" },
+            { "Comedy", "😂" },
+            { "Crime", "🔫" },
+            { "Documentary", "📽️" },
+            { "Drama", "🎭" },
+            { "Family", "👨‍👩‍👧‍👦" },
+            { "Fantasy", "🧙" },
+            { "Horror", "👻" },
+            { "Mystery", "🔍" },
+            { "Romance", "❤️" },
+            { "Sci-Fi", "🚀" },
+            { "Thriller", "😱" },
+            { "Western", "🤠" },
+            { "War", "⚔️" },
+            { "Musical", "🎵" },
+            { "Biography", "📖" },
+            { "History", "🏛️" },
+            { "Sport", "⚽" }
+        };
 
-            _allMovies = await MovieAutomation.GetAllMoviesAsync();
-            _filteredMovies = new List<Movie>(_allMovies);
-
-            SetupGenreFilters();
-            DisplayMovies(_filteredMovies);
-
-            LoadingIndicator.IsVisible = false;
-            LoadingIndicator.IsRunning = false;
-            ResultsScrollView.IsVisible = true;
+        public Search()
+        {
+            InitializeComponent();
         }
-        catch (Exception ex)
+
+        protected override async void OnAppearing()
         {
-            await DisplayAlert("Error", $"Failed to load movies: {ex.Message}", "OK");
-            LoadingIndicator.IsVisible = false;
-            LoadingIndicator.IsRunning = false;
+            base.OnAppearing();
+
+            if (_allMovies.Count == 0)
+                await LoadMoviesAsync();
         }
-    }
 
-    #region Genre Chips
-
-    private void SetupGenreFilters()
-    {
-        if (_allMovies == null || _allMovies.Count == 0)
-            return;
-
-        var allGenres = new HashSet<string>();
-        foreach (var movie in _allMovies)
+        private async Task LoadMoviesAsync()
         {
-            if (movie.genre != null)
+            try
             {
-                foreach (var genre in movie.genre)
-                    allGenres.Add(genre);
+                ShowLoading(true);
+
+                _allMovies = await MovieAutomation.GetAllMoviesAsync();
+                _filteredMovies = new List<Movie>(_allMovies);
+
+                SetupGenreFilters();
+                DisplayMovies(_filteredMovies);
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", ex.Message, "OK");
+            }
+            finally
+            {
+                ShowLoading(false);
             }
         }
 
-        GenreChipsContainer.Children.Clear();
-
-        // Add "All" chip
-        var allChip = CreateGenreChip("All", "🎬", true);
-        GenreChipsContainer.Children.Add(allChip);
-
-        // Add genre chips
-        foreach (var genre in allGenres.OrderBy(g => g))
+        private void ShowLoading(bool show)
         {
-            var emoji = GetGenreEmoji(genre);
-            var chip = CreateGenreChip(genre, emoji, false);
-            GenreChipsContainer.Children.Add(chip);
+            LoadingIndicator.IsVisible = show;
+            LoadingIndicator.IsRunning = show;
+            ResultsScrollView.IsVisible = !show;
+            NoResultsView.IsVisible = false;
         }
-    }
 
-    private Border CreateGenreChip(string genre, string emoji, bool isSelected)
-    {
-        var border = new Border
+        // =====================
+        // 🔍 SEARCH (DEBOUNCED)
+        // =====================
+        private void SearchEntry_TextChanged(object sender, TextChangedEventArgs e)
         {
-            StrokeShape = new RoundRectangle { CornerRadius = 20 },
-            Padding = new Thickness(15, 8),
-            BackgroundColor = isSelected ? Color.FromArgb("#FFB800") : Color.FromArgb("#1a1a1a"),
-            Stroke = isSelected ? Color.FromArgb("#FFB800") : Color.FromArgb("#333")
-        };
+            _searchText = e.NewTextValue ?? "";
+            ClearButton.IsVisible = !string.IsNullOrEmpty(_searchText);
 
-        var stack = new HorizontalStackLayout { Spacing = 5 };
-        stack.Children.Add(new Label
-        {
-            Text = emoji,
-            FontSize = 16,
-            VerticalOptions = LayoutOptions.Center
-        });
+            _searchDebounceToken?.Cancel();
+            _searchDebounceToken = new CancellationTokenSource();
 
-        stack.Children.Add(new Label
-        {
-            Text = genre,
-            FontSize = 14,
-            TextColor = isSelected ? Colors.Black : Colors.White,
-            FontAttributes = isSelected ? FontAttributes.Bold : FontAttributes.None,
-            VerticalOptions = LayoutOptions.Center
-        });
+            var token = _searchDebounceToken.Token;
 
-        border.Content = stack;
-
-        var tapGesture = new TapGestureRecognizer();
-        tapGesture.Tapped += (s, e) => GenreChip_Tapped(genre, border);
-        border.GestureRecognizers.Add(tapGesture);
-
-        return border;
-    }
-
-    private void GenreChip_Tapped(string genre, Border chipBorder)
-    {
-        if (genre == "All")
-        {
-            _selectedGenres.Clear();
-            foreach (var child in GenreChipsContainer.Children.OfType<Border>())
+            Task.Delay(350, token).ContinueWith(t =>
             {
-                var stack = child.Content as HorizontalStackLayout;
-                var label = stack?.Children.OfType<Label>().LastOrDefault();
+                if (!t.IsCanceled)
+                    MainThread.BeginInvokeOnMainThread(ApplyFilters);
+            });
+        }
 
-                if (label?.Text == "All")
+        private void ClearSearch_Clicked(object sender, EventArgs e)
+        {
+            SearchEntry.Text = "";
+            _searchText = "";
+            ClearButton.IsVisible = false;
+            ApplyFilters();
+        }
+
+        // =====================
+        // 🎭 GENRE FILTERS WITH EMOJIS
+        // =====================
+        private void SetupGenreFilters()
+        {
+            GenreChipsContainer.Children.Clear();
+            _selectedGenres.Clear();
+
+            GenreChipsContainer.Children.Add(CreateGenreChip("All", "🎬", true));
+
+            var genres = _allMovies
+                .Where(m => m.genre != null)
+                .SelectMany(m => m.genre)
+                .Distinct()
+                .OrderBy(g => g);
+
+            foreach (var genre in genres)
+            {
+                var emoji = GenreEmojis.ContainsKey(genre) ? GenreEmojis[genre] : "🎥";
+                GenreChipsContainer.Children.Add(CreateGenreChip(genre, emoji, false));
+            }
+        }
+
+        private Border CreateGenreChip(string genre, string emoji, bool selected)
+        {
+            var stackLayout = new HorizontalStackLayout
+            {
+                Spacing = 6,
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            stackLayout.Children.Add(new Label
+            {
+                Text = emoji,
+                FontSize = 16,
+                VerticalOptions = LayoutOptions.Center
+            });
+
+            stackLayout.Children.Add(new Label
+            {
+                Text = genre,
+                TextColor = selected ? Colors.Black : Colors.White,
+                FontAttributes = selected ? FontAttributes.Bold : FontAttributes.None,
+                VerticalOptions = LayoutOptions.Center,
+                FontSize = 14
+            });
+
+            var border = new Border
+            {
+                StrokeShape = new RoundRectangle { CornerRadius = 20 },
+                Padding = new Thickness(15, 8),
+                BackgroundColor = selected ? Color.FromArgb("#FFB800") : Color.FromArgb("#1a1a1a"),
+                Stroke = selected ? Color.FromArgb("#FFB800") : Color.FromArgb("#333"),
+                Content = stackLayout
+            };
+
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += async (_, _) =>
+            {
+                await border.ScaleTo(1.15, 90, Easing.CubicOut);
+                await border.ScaleTo(1.0, 90, Easing.CubicIn);
+                await border.ScaleTo(1.1, 80);
+                await border.ScaleTo(1.0, 80);
+                ToggleGenre(genre, border, stackLayout);
+            };
+            border.Shadow = new Shadow
+            {
+                Brush = selected ? Color.FromArgb("#FFB800") : Colors.Transparent,
+                Radius = 12,
+                Opacity = 0.6f
+            };
+
+            border.GestureRecognizers.Add(tap);
+            return border;
+        }
+
+        private void ToggleGenre(string genre, Border chip, HorizontalStackLayout content)
+        {
+            if (genre == "All")
+            {
+                _selectedGenres.Clear();
+                SetupGenreFilters();
+            }
+            else
+            {
+                if (!_selectedGenres.Add(genre))
+                    _selectedGenres.Remove(genre);
+
+                bool isSelected = _selectedGenres.Contains(genre);
+                chip.BackgroundColor = isSelected
+                    ? Color.FromArgb("#FFB800")
+                    : Color.FromArgb("#1a1a1a");
+
+                chip.Shadow = new Shadow
                 {
-                    child.BackgroundColor = Color.FromArgb("#FFB800");
-                    child.Stroke = Color.FromArgb("#FFB800");
-                    label.TextColor = Colors.Black;
-                    label.FontAttributes = FontAttributes.Bold;
+                    Brush = isSelected ? Color.FromArgb("#FFB800") : Colors.Transparent,
+                    Radius = 12,
+                    Opacity = 0.6f
+                };
+
+                // Update text color
+                var textLabel = content.Children.OfType<Label>().LastOrDefault();
+                if (textLabel != null)
+                {
+                    textLabel.TextColor = isSelected ? Colors.Black : Colors.White;
+                    textLabel.FontAttributes = isSelected ? FontAttributes.Bold : FontAttributes.None;
+                }
+            }
+
+            ApplyFilters();
+        }
+
+        // =====================
+        // 🎬 FILTERING
+        // =====================
+        private void ApplyFilters()
+        {
+            _filteredMovies = _allMovies.Where(movie =>
+            {
+                bool matchesSearch =
+                    string.IsNullOrWhiteSpace(_searchText) ||
+                    movie.title.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+
+                bool matchesGenre =
+                    _selectedGenres.Count == 0 ||
+                    (movie.genre?.Any(g => _selectedGenres.Contains(g)) ?? false);
+
+                return matchesSearch && matchesGenre;
+            }).ToList();
+
+            DisplayMovies(_filteredMovies);
+        }
+
+        private Border CreateMovieCard(Movie movie)
+        {
+            var grid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitionCollection
+                {
+                    new ColumnDefinition { Width = new GridLength(120) }, // Image width
+                    new ColumnDefinition { Width = GridLength.Star }      // Title width
+                },
+                Padding = 10
+            };
+
+            // Movie Poster Image
+            var posterBorder = new Border
+            {
+                StrokeShape = new RoundRectangle { CornerRadius = 10 },
+                Stroke = Color.FromArgb("#333"),
+                StrokeThickness = 1,
+                WidthRequest = 100,
+                HeightRequest = 150,
+                BackgroundColor = Color.FromArgb("#222"),
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            var posterImage = new Image
+            {
+                Aspect = Aspect.AspectFill,
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill
+            };
+
+            // Check if poster is a URL or local file
+            if (!string.IsNullOrEmpty(movie.poster))
+            {
+                if (movie.poster.StartsWith("http://") || movie.poster.StartsWith("https://"))
+                {
+                    posterImage.Source = new UriImageSource
+                    {
+                        Uri = new Uri(movie.poster),
+                        CachingEnabled = true,
+                        CacheValidity = TimeSpan.FromDays(1)
+                    };
                 }
                 else
                 {
-                    child.BackgroundColor = Color.FromArgb("#1a1a1a");
-                    child.Stroke = Color.FromArgb("#333");
-                    if (label != null)
-                    {
-                        label.TextColor = Colors.White;
-                        label.FontAttributes = FontAttributes.None;
-                    }
-                }
-            }
-        }
-        else
-        {
-            if (_selectedGenres.Contains(genre))
-                _selectedGenres.Remove(genre);
-            else
-                _selectedGenres.Add(genre);
-
-            var stack = chipBorder.Content as HorizontalStackLayout;
-            var label = stack?.Children.OfType<Label>().LastOrDefault();
-
-            if (_selectedGenres.Contains(genre))
-            {
-                chipBorder.BackgroundColor = Color.FromArgb("#FFB800");
-                chipBorder.Stroke = Color.FromArgb("#FFB800");
-                if (label != null)
-                {
-                    label.TextColor = Colors.Black;
-                    label.FontAttributes = FontAttributes.Bold;
+                    posterImage.Source = movie.poster;
                 }
             }
             else
             {
-                chipBorder.BackgroundColor = Color.FromArgb("#1a1a1a");
-                chipBorder.Stroke = Color.FromArgb("#333");
-                if (label != null)
-                {
-                    label.TextColor = Colors.White;
-                    label.FontAttributes = FontAttributes.None;
-                }
+                // Fallback placeholder
+                posterImage.Source = "placeholder_movie.png";
             }
-        }
 
-        if (_selectedGenres.Count == 0)
-        {
-            foreach (var child in GenreChipsContainer.Children.OfType<Border>())
+            posterBorder.Content = posterImage;
+            Grid.SetColumn(posterBorder, 0);
+            grid.Children.Add(posterBorder);
+
+            // Movie Details (Title, Year, Rating)
+            var detailsStack = new VerticalStackLayout
             {
-                var s = child.Content as HorizontalStackLayout;
-                var l = s?.Children.OfType<Label>().LastOrDefault();
-                if (l?.Text == "All")
-                {
-                    child.BackgroundColor = Color.FromArgb("#FFB800");
-                    child.Stroke = Color.FromArgb("#FFB800");
-                    l.TextColor = Colors.Black;
-                    l.FontAttributes = FontAttributes.Bold;
-                    break;
-                }
-            }
-        }
-
-        ApplyFilters();
-    }
-
-    private string GetGenreEmoji(string genre) => genre.ToLower() switch
-    {
-        "action" => "💥",
-        "adventure" => "🗺️",
-        "comedy" => "😂",
-        "drama" => "🎭",
-        "horror" => "👻",
-        "thriller" => "🔪",
-        "romance" => "💕",
-        "sci-fi" or "science fiction" => "🚀",
-        "fantasy" => "🧙",
-        "animation" => "🎨",
-        "family" => "👨‍👩‍👧‍👦",
-        "mystery" => "🔍",
-        "crime" => "🚔",
-        "documentary" => "📽️",
-        "biography" => "📚",
-        "history" => "⏳",
-        "war" => "⚔️",
-        "western" => "🤠",
-        "musical" => "🎵",
-        "sport" => "⚽",
-        _ => "🎬"
-    };
-
-    #endregion
-
-    #region Movie Cards
-
-    private Border CreateMovieCard(Movie movie)
-    {
-        var border = new Border
-        {
-            StrokeShape = new RoundRectangle { CornerRadius = 15 },
-            Stroke = Color.FromArgb("#333"),
-            BackgroundColor = Color.FromArgb("#1a1a1a"),
-            Margin = new Thickness(0),
-            Shadow = new Shadow
-            {
-                Brush = Colors.Black,
-                Offset = new Point(0, 4),
-                Radius = 8,
-                Opacity = 0.4f
-            }
-        };
-
-        var grid = new Grid
-        {
-            ColumnDefinitions =
-            {
-                new ColumnDefinition { Width = 120 },
-                new ColumnDefinition { Width = GridLength.Star }
-            }
-        };
-
-        // Poster with overlay
-        var posterBorder = new Border
-        {
-            StrokeShape = new RoundRectangle { CornerRadius = 15 },
-            WidthRequest = 120,
-            HeightRequest = 180
-        };
-
-        posterBorder.Content = new Image
-        {
-            Source = movie.ImageFileName,
-            Aspect = Aspect.AspectFill
-        };
-
-        var posterGrid = new Grid { WidthRequest = 120, HeightRequest = 180 };
-        posterGrid.Children.Add(posterBorder);
-
-        var playIconBorder = new Border
-        {
-            StrokeShape = new RoundRectangle { CornerRadius = 20 },
-            WidthRequest = 40,
-            HeightRequest = 40,
-            BackgroundColor = Color.FromArgb("#80000000"),
-            HorizontalOptions = LayoutOptions.Center,
-            VerticalOptions = LayoutOptions.Center,
-            Content = new Label
-            {
-                Text = "▶",
-                FontSize = 20,
-                TextColor = Colors.White,
-                HorizontalOptions = LayoutOptions.Center,
+                Spacing = 5,
+                Padding = new Thickness(15, 0, 0, 0),
                 VerticalOptions = LayoutOptions.Center
-            }
-        };
-        posterGrid.Children.Add(playIconBorder);
+            };
 
-        grid.Add(posterGrid, 0, 0);
-
-        // Info Stack
-        var infoStack = new VerticalStackLayout
-        {
-            Padding = new Thickness(15, 10),
-            Spacing = 8
-        };
-
-        infoStack.Children.Add(new Label
-        {
-            Text = movie.name,
-            FontSize = 18,
-            FontAttributes = FontAttributes.Bold,
-            TextColor = Colors.White,
-            MaxLines = 2
-        });
-
-        if (movie.year > 0)
-        {
-            infoStack.Children.Add(new Label
+            var titleLabel = new Label
             {
-                Text = $"📅 {movie.year}",
-                FontSize = 13,
-                TextColor = Color.FromArgb("#999")
-            });
-        }
+                Text = movie.title,
+                TextColor = Colors.White,
+                FontSize = 18,
+                FontAttributes = FontAttributes.Bold,
+                LineBreakMode = LineBreakMode.WordWrap,
+                MaxLines = 2
+            };
 
-        // Bottom info: rating and reviewed badge
-        var bottomStack = new HorizontalStackLayout { Spacing = 10 };
-
-        if (CheckIfReviewed(movie.name))
-        {
-            var reviewedBadge = new Border
+            var infoStack = new HorizontalStackLayout
             {
-                StrokeShape = new RoundRectangle { CornerRadius = 10 },
-                BackgroundColor = Color.FromArgb("#4CAF50"),
-                Padding = new Thickness(8, 4),
-                Content = new Label
+                Spacing = 10
+            };
+
+            if (movie.year > 0)
+            {
+                infoStack.Children.Add(new Label
                 {
-                    Text = "✓ Reviewed",
-                    FontSize = 10,
-                    TextColor = Colors.White,
-                    FontAttributes = FontAttributes.Bold
+                    Text = movie.year.ToString(),
+                    TextColor = Color.FromArgb("#999"),
+                    FontSize = 14
+                });
+            }
+
+            if (movie.rating > 0)
+            {
+                infoStack.Children.Add(new Label
+                {
+                    Text = $"⭐ {movie.rating:F1}",
+                    TextColor = Color.FromArgb("#FFB800"),
+                    FontSize = 14
+                });
+            }
+
+            var genreLabel = new Label
+            {
+                Text = movie.genre != null && movie.genre.Count > 0
+                    ? string.Join(" • ", movie.genre)
+                    : "Unknown",
+                TextColor = Color.FromArgb("#999"),
+                FontSize = 13,
+                LineBreakMode = LineBreakMode.TailTruncation,
+                MaxLines = 1
+            };
+
+            detailsStack.Children.Add(titleLabel);
+            detailsStack.Children.Add(infoStack);
+            detailsStack.Children.Add(genreLabel);
+
+            Grid.SetColumn(detailsStack, 1);
+            grid.Children.Add(detailsStack);
+
+            // Main Border
+            var border = new Border
+            {
+                Stroke = Color.FromArgb("#333"),
+                StrokeShape = new RoundRectangle { CornerRadius = 15 },
+                BackgroundColor = Color.FromArgb("#1a1a1a"),
+                Content = grid,
+                Margin = new Thickness(5),
+                Shadow = new Shadow
+                {
+                    Brush = Colors.Black,
+                    Radius = 8,
+                    Opacity = 0.3f
                 }
             };
-            bottomStack.Children.Add(reviewedBadge);
+
+            var tapGesture = new TapGestureRecognizer();
+            tapGesture.Tapped += async (_, _) => await MovieCard_Tapped(movie);
+            border.GestureRecognizers.Add(tapGesture);
+
+            return border;
         }
 
-        if (movie.imDbRating > 0)
+        private async void DisplayMovies(List<Movie> movies)
         {
-            bottomStack.Children.Add(new Label
+            MoviesContainer.Children.Clear();
+
+            if (movies == null || movies.Count == 0)
             {
-                Text = $"⭐ {movie.imDbRating}/10",
-                FontSize = 12,
-                TextColor = Color.FromArgb("#FFB800")
-            });
-        }
+                ResultsScrollView.IsVisible = false;
+                NoResultsView.IsVisible = true;
+                return;
+            }
 
-        infoStack.Children.Add(bottomStack);
+            ResultsScrollView.IsVisible = true;
+            NoResultsView.IsVisible = false;
 
-        grid.Add(infoStack, 1, 0);
-
-        border.Content = grid;
-
-        var tapGesture = new TapGestureRecognizer();
-        tapGesture.Tapped += async (_, _) => await MovieCard_Tapped(movie);
-        border.GestureRecognizers.Add(tapGesture);
-
-        return border;
-    }
-
-    private bool CheckIfReviewed(string movieName)
-    {
-        try
-        {
-            var json = SecureStorage.GetAsync($"review_{movieName}").Result;
-            if (!string.IsNullOrEmpty(json))
+            foreach (var movie in movies)
             {
-                var review = JsonSerializer.Deserialize<MovieReview>(json);
-                return review != null;
+                var card = CreateMovieCard(movie);
+
+                // Initial animation state
+                card.Opacity = 0;
+                card.TranslationY = 20;
+
+                MoviesContainer.Children.Add(card);
+
+                // Staggered animation
+                await Task.Delay(40);
+
+                _ = card.FadeTo(1, 250, Easing.CubicOut);
+                _ = card.TranslateTo(0, 0, 250, Easing.CubicOut);
             }
         }
-        catch { }
 
-        return false;
-    }
-
-    private async Task MovieCard_Tapped(Movie movie)
-    {
-        await Navigation.PushAsync(new MovieDetailsPage(movie));
-    }
-
-    #endregion
-
-    #region Search
-
-    private void SearchEntry_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        _searchText = e.NewTextValue ?? "";
-        ClearButton.IsVisible = !string.IsNullOrEmpty(_searchText);
-        ApplyFilters();
-    }
-
-    private void ClearSearch_Clicked(object sender, EventArgs e)
-    {
-        SearchEntry.Text = "";
-        _searchText = "";
-        ClearButton.IsVisible = false;
-        ApplyFilters();
-    }
-
-    private void ApplyFilters()
-    {
-        if (_allMovies == null || _allMovies.Count == 0)
-            return;
-
-        _filteredMovies = _allMovies.Where(movie =>
+        private async Task MovieCard_Tapped(Movie movie)
         {
-            bool matchesSearch = string.IsNullOrEmpty(_searchText) ||
-                                 movie.name.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+            if (_isNavigating)
+                return;
 
-            bool matchesGenre = _selectedGenres.Count == 0 ||
-                                (movie.genre != null && movie.genre.Any(g => _selectedGenres.Contains(g)));
-
-            return matchesSearch && matchesGenre;
-        }).ToList();
-
-        DisplayMovies(_filteredMovies);
-    }
-
-    private void DisplayMovies(List<Movie> movies)
-    {
-        MoviesContainer.Children.Clear();
-
-        if (movies == null || movies.Count == 0)
-        {
-            ResultsScrollView.IsVisible = false;
-            NoResultsView.IsVisible = true;
-            return;
-        }
-
-        ResultsScrollView.IsVisible = true;
-        NoResultsView.IsVisible = false;
-
-        foreach (var movie in movies)
-        {
-            MoviesContainer.Children.Add(CreateMovieCard(movie));
+            try
+            {
+                _isNavigating = true;
+                await Navigation.PushAsync(new MovieDetailsPage(movie));
+            }
+            finally
+            {
+                _isNavigating = false;
+            }
         }
     }
-
-    #endregion
 }

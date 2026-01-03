@@ -1,442 +1,257 @@
-<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MovieApp.MovieDetailsPage"
-             x:Name="ThisPage"
              BackgroundColor="#0F0F0F">
 
-    <Grid>
-        <!-- Background Gradient -->
-        <BoxView>
-            <BoxView.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#1a1a1a" Offset="0.0"/>
-                    <GradientStop Color="#0F0F0F" Offset="1.0"/>
-                </LinearGradientBrush>
-            </BoxView.Background>
-        </BoxView>
+    <ScrollView>
+        <VerticalStackLayout Spacing="0">
 
-        <ScrollView>
-            <VerticalStackLayout Spacing="0">
+            <!-- Header with Back Button -->
+            <Grid Padding="20,50,20,20" ColumnDefinitions="40,*,40">
+                <Button Grid.Column="0"
+                        Text="←"
+                        FontSize="28"
+                        TextColor="White"
+                        BackgroundColor="Transparent"
+                        Clicked="Back_Clicked"/>
+                <Label Grid.Column="1"
+                       Text="Movie Details"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Grid>
 
-                <!-- Header with a Back Button -->
-                <Grid Padding="20,50,20,20" ColumnDefinitions="40,*,40">
-                    <Button Grid.Column="0"
-                            Text="←"
-                            FontSize="28"
+            <!-- Movie Poster with Play Overlay -->
+            <Grid Margin="20,0,20,20" HeightRequest="400">
+                <Border StrokeShape="RoundRectangle 20"
+                        StrokeThickness="0"
+                        Shadow="{Shadow Brush=Black, Radius=10, Opacity=0.5}">
+                    <Image x:Name="MoviePoster"
+                           Aspect="AspectFill"
+                           Source="{Binding PosterUrl}"/>
+                </Border>
+
+                <!-- Trailer WebView -->
+                <WebView x:Name="TrailerWebView"
+                         IsVisible="False"
+                         BackgroundColor="Transparent"
+                         HorizontalOptions="Fill"
+                         VerticalOptions="Fill"/>
+
+                <!-- Play Button Overlay -->
+                <Border x:Name="PlayButton"
+                        StrokeShape="RoundRectangle 35"
+                        WidthRequest="70"
+                        HeightRequest="70"
+                        BackgroundColor="#40FFFFFF"
+                        Stroke="Transparent"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        Shadow="{Shadow Brush=Black, Radius=15, Opacity=0.6}">
+                    <Button Text="▶"
+                            FontSize="30"
                             TextColor="White"
                             BackgroundColor="Transparent"
-                            Clicked="Back_Clicked"/>
+                            Clicked="PlayMovie_Clicked"/>
+                </Border>
 
-                    <Label Grid.Column="1"
-                           Text="Movie Details"
-                           FontSize="18"
-                           FontAttributes="Bold"
+                <!-- Watched Badge -->
+                <Border x:Name="WatchedBadge"
+                        StrokeShape="RoundRectangle 15"
+                        Padding="10,5"
+                        BackgroundColor="#4CAF50"
+                        Stroke="Transparent"
+                        HorizontalOptions="Start"
+                        VerticalOptions="Start"
+                        Margin="10"
+                        IsVisible="False">
+                    <Label Text="✓ Watched"
+                           FontSize="12"
                            TextColor="White"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center"/>
-                </Grid>
+                           FontAttributes="Bold"/>
+                </Border>
+            </Grid>
 
-                <!-- Movie Poster with Play Button Overlay -->
-                <Grid Margin="20,0,20,20" HeightRequest="400">
-                    <Grid>
-                        <Frame CornerRadius="20" 
-                           Padding="0"
-                           HasShadow="True">
-                            <Image x:Name="MoviePoster"
-                               Source="iron_man.jpg"                              
-                               Aspect="AspectFill"/>
-                        </Frame>
-                        <WebView x:Name="TrailerWebView"
-                                 IsVisible="False"
-                                 BackgroundColor="Transparent"
-                                 HorizontalOptions="Fill"
-                                 VerticalOptions="Fill"
-                                 Source="https://www.youtube.com/watch?v=Ke1Y3P9D0Bc"/>
-                    </Grid>
-
-                    <!-- Watched Badge -->
-                    <Frame x:Name="WatchedBadge"
-                           CornerRadius="15"
-                           Padding="10,5"
-                           BackgroundColor="#4CAF50"
-                           HorizontalOptions="Start"
-                           VerticalOptions="Start"
-                           Margin="10"
-                           IsVisible="False">
-                        <Label Text="✓ Watched"
-                               FontSize="12"
-                               TextColor="White"
-                               FontAttributes="Bold"/>
-                    </Frame>
-
-                    <!-- Play Button Overlay -->
-                    <Frame x:Name="PlayButton"
-                           CornerRadius="35"
-                           WidthRequest="70"
-                           HeightRequest="70"
-                           Padding="0"
-                           BackgroundColor="#40FFFFFF"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center"
-                           HasShadow="True">
-                        <Button Text="▶"
-                                FontSize="30"
-                                TextColor="White"
-                                BackgroundColor="Transparent"
-                                Clicked="PlayMovie_Clicked"/>
-                    </Frame>
-                </Grid>
-
-                <!-- Movie Title and Info -->
-                <VerticalStackLayout Padding="20,0" Spacing="10">
-                    <Label x:Name="MovieTitle"
-                           Text="Iron Man"
-                           FontSize="26"
-                           FontAttributes="Bold"
-                           TextColor="White"
-                           LineBreakMode="WordWrap"/>
-
-                    <Label x:Name="MovieGenres"
-                           Text="Movie | Adventure | Comedy | Family"
-                           FontSize="13"
-                           TextColor="#999"
-                           Margin="0,0,0,10"/>
-
-                    <!-- Your Rating Section -->
-                    <Frame CornerRadius="15"
-                           Padding="15"
-                           BackgroundColor="#1a1a1a"
-                           BorderColor="#333"
-                           HasShadow="False"
-                           Margin="0,0,0,15">
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="Your Rating"
-                                   FontSize="14"
-                                   TextColor="#999"
-                                   FontAttributes="Bold"/>
-
-                            <HorizontalStackLayout Spacing="10">
-                                <!-- Star Rating Buttons -->
-                                <Button x:Name="Star1" 
-                                        Text="☆" 
-                                        FontSize="32" 
-                                        TextColor="#666"
-                                        BackgroundColor="Transparent"
-                                        Clicked="Star_Clicked"
-                                        WidthRequest="40"
-                                        HeightRequest="40"
-                                        Padding="0"/>
-                                <Button x:Name="Star2" 
-                                        Text="☆" 
-                                        FontSize="32" 
-                                        TextColor="#666"
-                                        BackgroundColor="Transparent"
-                                        Clicked="Star_Clicked"
-                                        WidthRequest="40"
-                                        HeightRequest="40"
-                                        Padding="0"/>
-                                <Button x:Name="Star3" 
-                                        Text="☆" 
-                                        FontSize="32" 
-                                        TextColor="#666"
-                                        BackgroundColor="Transparent"
-                                        Clicked="Star_Clicked"
-                                        WidthRequest="40"
-                                        HeightRequest="40"
-                                        Padding="0"/>
-                                <Button x:Name="Star4" 
-                                        Text="☆" 
-                                        FontSize="32" 
-                                        TextColor="#666"
-                                        BackgroundColor="Transparent"
-                                        Clicked="Star_Clicked"
-                                        WidthRequest="40"
-                                        HeightRequest="40"
-                                        Padding="0"/>
-                                <Button x:Name="Star5" 
-                                        Text="☆" 
-                                        FontSize="32" 
-                                        TextColor="#666"
-                                        BackgroundColor="Transparent"
-                                        Clicked="Star_Clicked"
-                                        WidthRequest="40"
-                                        HeightRequest="40"
-                                        Padding="0"/>
-
-                                <Label x:Name="RatingText"
-                                       Text="Not rated"
-                                       FontSize="16"
-                                       TextColor="White"
-                                       VerticalOptions="Center"
-                                       Margin="10,0,0,0"/>
-                            </HorizontalStackLayout>
-                        </VerticalStackLayout>
-                    </Frame>
-
-                    <!-- Emoji Reactions Section -->
-                    <Frame CornerRadius="15"
-                           Padding="15"
-                           BackgroundColor="#1a1a1a"
-                           BorderColor="#333"
-                           HasShadow="False"
-                           Margin="0,0,0,15">
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="Your Reaction"
-                                   FontSize="14"
-                                   TextColor="#999"
-                                   FontAttributes="Bold"/>
-
-                            <FlexLayout Wrap="Wrap" 
-                                        JustifyContent="Start"
-                                        AlignItems="Start">
-                                <Button x:Name="Emoji1" 
-                                        Text="😍" 
-                                        FontSize="28"
-                                        BackgroundColor="#2a2a2a"
-                                        TextColor="White"
-                                        CornerRadius="20"
-                                        Clicked="Emoji_Clicked"
-                                        Margin="0,0,8,8"
-                                        WidthRequest="60"
-                                        HeightRequest="60"
-                                        Padding="0"/>
-                                <Button x:Name="Emoji2" 
-                                        Text="😂" 
-                                        FontSize="28"
-                                        BackgroundColor="#2a2a2a"
-                                        TextColor="White"
-                                        CornerRadius="20"
-                                        Clicked="Emoji_Clicked"
-                                        Margin="0,0,8,8"
-                                        WidthRequest="60"
-                                        HeightRequest="60"
-                                        Padding="0"/>
-                                <Button x:Name="Emoji3" 
-                                        Text="😢" 
-                                        FontSize="28"
-                                        BackgroundColor="#2a2a2a"
-                                        TextColor="White"
-                                        CornerRadius="20"
-                                        Clicked="Emoji_Clicked"
-                                        Margin="0,0,8,8"
-                                        WidthRequest="60"
-                                        HeightRequest="60"
-                                        Padding="0"/>
-                                <Button x:Name="Emoji4" 
-                                        Text="😱" 
-                                        FontSize="28"
-                                        BackgroundColor="#2a2a2a"
-                                        TextColor="White"
-                                        CornerRadius="20"
-                                        Clicked="Emoji_Clicked"
-                                        Margin="0,0,8,8"
-                                        WidthRequest="60"
-                                        HeightRequest="60"
-                                        Padding="0"/>
-                                <Button x:Name="Emoji5" 
-                                        Text="🔥" 
-                                        FontSize="28"
-                                        BackgroundColor="#2a2a2a"
-                                        TextColor="White"
-                                        CornerRadius="20"
-                                        Clicked="Emoji_Clicked"
-                                        Margin="0,0,8,8"
-                                        WidthRequest="60"
-                                        HeightRequest="60"
-                                        Padding="0"/>
-                                <Button x:Name="Emoji6" 
-                                        Text="👏" 
-                                        FontSize="28"
-                                        BackgroundColor="#2a2a2a"
-                                        TextColor="White"
-                                        CornerRadius="20"
-                                        Clicked="Emoji_Clicked"
-                                        Margin="0,0,8,8"
-                                        WidthRequest="60"
-                                        HeightRequest="60"
-                                        Padding="0"/>
-                            </FlexLayout>
-                        </VerticalStackLayout>
-                    </Frame>
-
-                    <!-- Description -->
-                    <Label x:Name="MovieDescription"
-                           Text="After saving New York from an alien invasion, billionaire Tony Stark buries himself deeper into his work by building a ton of new and improved Iron Man suits."
-                           FontSize="14"
-                           TextColor="#CCC"
-                           LineBreakMode="WordWrap"
-                           Margin="0,0,0,15"/>
-
-                    <!-- Action Buttons -->
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,0,0,10">
-                        <Button x:Name="WatchedButton"
-                                Grid.Column="0"
-                                Text="Mark as Watched"
-                                BackgroundColor="#4CAF50"
-                                TextColor="White"
-                                CornerRadius="25"
-                                HeightRequest="50"
-                                FontSize="14"
-                                FontAttributes="Bold"
-                                Clicked="ToggleWatched_Clicked"/>
-
-                        <Button Grid.Column="1"
-                                Text="Share Review"
-                                BackgroundColor="#FFB800"
-                                TextColor="Black"
-                                CornerRadius="25"
-                                HeightRequest="50"
-                                FontSize="14"
-                                FontAttributes="Bold"
-                                Clicked="ShareReview_Clicked"/>
-                    </Grid>
-
-                    <!-- Watch Now Button -->
-                    <Button Text="WATCH NOW"
-                            BackgroundColor="#FFB800"
-                            TextColor="Black"
-                            CornerRadius="25"
-                            HeightRequest="50"
-                            FontSize="16"
-                            FontAttributes="Bold"
-                            Margin="0,0,0,0"
-                            Clicked="WatchNow_Clicked"/>
-                </VerticalStackLayout>
-
-                <!-- Cast Section -->
-                <VerticalStackLayout Padding="20" Spacing="15" Margin="0,20,0,0">
-                    <Label Text="Cast"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           TextColor="White"/>
-
-                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                        <HorizontalStackLayout Spacing="15" x:Name="CastContainer">
-
-                            <!-- Cast Member Template -->
-                            <VerticalStackLayout Spacing="8" WidthRequest="100">
-                                <Frame CornerRadius="50" 
-                                       Padding="0" 
-                                       WidthRequest="100"
-                                       HeightRequest="100"
-                                       HorizontalOptions="Center"
-                                       HasShadow="False"
-                                       BorderColor="#333"
-                                       BackgroundColor="#222">
-                                    <Image Source="iron_man.png" 
-                                           Aspect="AspectFill"/>
-                                </Frame>
-                                <Label Text="Isabela Moner"
-                                       FontSize="12"
-                                       TextColor="White"
-                                       HorizontalTextAlignment="Center"
-                                       LineBreakMode="WordWrap"/>
-                            </VerticalStackLayout>
-
-                            <VerticalStackLayout Spacing="8" WidthRequest="100">
-                                <Frame CornerRadius="50" 
-                                       Padding="0" 
-                                       WidthRequest="100"
-                                       HeightRequest="100" 
-                                       HorizontalOptions="Center"
-                                       HasShadow="False"
-                                       BorderColor="#333"
-                                       BackgroundColor="#222">
-                                    <Image Source="iron_man.jpg" 
-                                           Aspect="AspectFill"/>
-                                </Frame>
-                                <Label Text="Michael Peña"
-                                       FontSize="12"
-                                       TextColor="White"
-                                       HorizontalTextAlignment="Center"
-                                       LineBreakMode="WordWrap"/>
-                            </VerticalStackLayout>
-
-                            <VerticalStackLayout Spacing="8" WidthRequest="100">
-                                <Frame CornerRadius="50" 
-                                       Padding="0" 
-                                       WidthRequest="100"
-                                       HeightRequest="100"
-                                       HorizontalOptions="Center"
-                                       HasShadow="False"
-                                       BorderColor="#333"
-                                       BackgroundColor="#222">
-                                    <Image Source="dotnet_bot.png" 
-                                           Aspect="AspectFill"/>
-                                </Frame>
-                                <Label Text="Eva Longoria"
-                                       FontSize="12"
-                                       TextColor="White"
-                                       HorizontalTextAlignment="Center"
-                                       LineBreakMode="WordWrap"/>
-                            </VerticalStackLayout>
-
-                        </HorizontalStackLayout>
-                    </ScrollView>
-
-                    <!-- Rate Button -->
-                    <Button Text="⭐ Rate this movie"
-                            BackgroundColor="#FFB800"
-                            TextColor="Black"
-                            CornerRadius="30"
-                            WidthRequest="60"
-                            HeightRequest="60"
-                            FontSize="24"
-                            HorizontalOptions="End"
-                            VerticalOptions="End"
-                            Margin="0,-30,0,0"
-                            Clicked="RateMovie_Clicked"/>
-                </VerticalStackLayout>
-
-                <!-- Similar Movies Section -->
-                <VerticalStackLayout Padding="20" Spacing="15" Margin="0,20,0,30">
-                    <Label Text="Similar Movies"
-                           FontSize="20"
-                           FontAttributes="Bold"
-                           TextColor="White"/>
-
-                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                        <HorizontalStackLayout Spacing="15">
-
-                            <!-- Movie Card 1 -->
-                            <Frame CornerRadius="12" 
-                                   Padding="0" 
-                                   HasShadow="True"
-                                   WidthRequest="140"
-                                   HeightRequest="200"
-                                   BackgroundColor="#1a1a1a">
-                                <Image Source="frozen.jpg" 
-                                       Aspect="AspectFill"/>
-                            </Frame>
-
-                            <!-- Movie Card 2 -->
-                            <Frame CornerRadius="12" 
-                                   Padding="0" 
-                                   HasShadow="True"
-                                   WidthRequest="140"
-                                   HeightRequest="200"
-                                   BackgroundColor="#1a1a1a">
-                                <Image Source="man_of_steel.jpg" 
-                                       Aspect="AspectFill"/>
-                            </Frame>
-
-                            <!-- Movie Card 3 -->
-                            <Frame CornerRadius="12" 
-                                   Padding="0" 
-                                   HasShadow="True"
-                                   WidthRequest="140"
-                                   HeightRequest="200"
-                                   BackgroundColor="#1a1a1a">
-                                <Image Source="the_wolverine.jpg" 
-                                       Aspect="AspectFill"/>
-                            </Frame>
-
-                        </HorizontalStackLayout>
-                    </ScrollView>
-                </VerticalStackLayout>
-
+            <!-- Movie Title & Genres -->
+            <VerticalStackLayout Padding="20,0" Spacing="10">
+                <Label x:Name="MovieTitle"
+                       Text="{Binding Title}"
+                       FontSize="26"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       LineBreakMode="WordWrap"/>
+                <Label x:Name="MovieGenres"
+                       Text="{Binding Genres}"
+                       FontSize="13"
+                       TextColor="#999"/>
             </VerticalStackLayout>
-        </ScrollView>
-    </Grid>
+
+            <!-- Movie Description -->
+            <Border StrokeShape="RoundRectangle 15" 
+                    Padding="15" 
+                    BackgroundColor="#1a1a1a" 
+                    Stroke="#333"
+                    StrokeThickness="1" 
+                    Margin="20,15">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Overview" 
+                           FontSize="16" 
+                           FontAttributes="Bold" 
+                           TextColor="White"/>
+                    <Label x:Name="MovieDescription"
+                           Text="Movie description goes here..."
+                           FontSize="14"
+                           TextColor="#ccc"
+                           LineBreakMode="WordWrap"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Action Buttons -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="20,0,20,15">
+                <Button x:Name="WatchedButton" 
+                        Grid.Column="0"
+                        Text="Mark as Watched"
+                        BackgroundColor="#4CAF50" 
+                        TextColor="White" 
+                        CornerRadius="25" 
+                        HeightRequest="50" 
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        Clicked="ToggleWatched_Clicked"/>
+
+                <Button x:Name="ShareButton" 
+                        Grid.Column="1"
+                        Text="Share Review"
+                        BackgroundColor="#2196F3" 
+                        TextColor="White" 
+                        CornerRadius="25" 
+                        HeightRequest="50" 
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        Clicked="ShareReview_Clicked"/>
+            </Grid>
+
+            <!-- Rating Section -->
+            <Border StrokeShape="RoundRectangle 15"
+                    Padding="15"
+                    BackgroundColor="#1a1a1a"
+                    Stroke="#333"
+                    StrokeThickness="1"
+                    Margin="20,10">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Your Rating"
+                           FontSize="14"
+                           TextColor="#999"
+                           FontAttributes="Bold"/>
+
+                    <HorizontalStackLayout Spacing="10">
+                        <Button x:Name="Star1" Text="☆" FontSize="32"
+                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
+                        <Button x:Name="Star2" Text="☆" FontSize="32"
+                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
+                        <Button x:Name="Star3" Text="☆" FontSize="32"
+                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
+                        <Button x:Name="Star4" Text="☆" FontSize="32"
+                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
+                        <Button x:Name="Star5" Text="☆" FontSize="32"
+                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
+                    </HorizontalStackLayout>
+
+                    <Label x:Name="RatingText" Text="Not rated" FontSize="12" TextColor="#999"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Emoji Reactions -->
+            <Border StrokeShape="RoundRectangle 15"
+                    Padding="15"
+                    BackgroundColor="#1a1a1a"
+                    Stroke="#333"
+                    StrokeThickness="1"
+                    Margin="20,10">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="How did it make you feel?"
+                           FontSize="14"
+                           TextColor="#999"
+                           FontAttributes="Bold"/>
+                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                        <Button x:Name="Emoji1" Grid.Row="0" Grid.Column="0" Text="😍" FontSize="32"
+                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
+                        <Button x:Name="Emoji2" Grid.Row="0" Grid.Column="1" Text="😂" FontSize="32"
+                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
+                        <Button x:Name="Emoji3" Grid.Row="0" Grid.Column="2" Text="😭" FontSize="32"
+                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
+                        <Button x:Name="Emoji4" Grid.Row="1" Grid.Column="0" Text="😱" FontSize="32"
+                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
+                        <Button x:Name="Emoji5" Grid.Row="1" Grid.Column="1" Text="🤔" FontSize="32"
+                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
+                        <Button x:Name="Emoji6" Grid.Row="1" Grid.Column="2" Text="😴" FontSize="32"
+                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Cast Section -->
+            <VerticalStackLayout x:Name="CastSection" Padding="20" Spacing="15" Margin="0,20,0,0">
+                <Label Text="Cast" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                    <HorizontalStackLayout Spacing="15" x:Name="CastContainer">
+                        <!-- Cast members added dynamically -->
+                    </HorizontalStackLayout>
+                </ScrollView>
+            </VerticalStackLayout>
+
+            <!-- Similar Movies -->
+            <VerticalStackLayout x:Name="SimilarMoviesSection" Padding="20" Spacing="15" Margin="0,20,0,30">
+                <Label Text="Similar Movies" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+                <CollectionView HeightRequest="210" 
+                                HorizontalScrollBarVisibility="Never"
+                                SelectionMode="Single" 
+                                x:Name="SimilarMoviesCollection"
+                                SelectionChanged="OnSimilarMovieSelected">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="15"/>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border StrokeShape="RoundRectangle 12" 
+                                    Stroke="Transparent"
+                                    WidthRequest="140" 
+                                    HeightRequest="200" 
+                                    BackgroundColor="#1a1a1a"
+                                    Shadow="{Shadow Brush=Black, Radius=10, Opacity=0.5}">
+                                <Image Aspect="AspectFill">
+                                    <Image.Source>
+                                        <UriImageSource Uri="{Binding Poster}" 
+                                                        CachingEnabled="True" 
+                                                        CacheValidity="1:00:00:00"/>
+                                    </Image.Source>
+                                </Image>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+
+            <!-- Clear Cache & Sign Out Buttons -->
+            <HorizontalStackLayout Padding="20,10" Spacing="15">
+                <Button Text="Clear Cache" 
+                        BackgroundColor="#FF4D4D" 
+                        TextColor="White"
+                        CornerRadius="25" 
+                        HeightRequest="50" 
+                        FontAttributes="Bold" 
+                        Clicked="ClearCache_Tapped"/>
+                <Button Text="Sign Out" 
+                        BackgroundColor="#FFB800" 
+                        TextColor="Black"
+                        CornerRadius="25" 
+                        HeightRequest="50" 
+                        FontAttributes="Bold" 
+                        Clicked="SignOut_Tapped"/>
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

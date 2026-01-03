@@ -121,53 +121,59 @@ namespace MovieApp;
             await DisplayAlert("Leave Feedback", "This would open a feedback form.", "OK");
         }
 
-        private async void ClearCache_Tapped(object sender, EventArgs e)
-        {
-            bool confirm = await DisplayAlert("Clear Cache",
-                "Are you sure you want to clear the cache?",
-                "Yes", "No");
+    private async void ClearCache_Tapped(object sender, EventArgs e)
+    {
+        bool confirm = await DisplayAlert(
+            "Clear Cache",
+            "This will reset all app settings. Continue?",
+            "Yes",
+            "No");
 
-            if (confirm)
-            {
-                await DisplayAlert("Success", "Cache cleared successfully.", "OK");
-            }
-        }
+        if (!confirm)
+            return;
 
-        private async void FAQ_Tapped(object sender, EventArgs e)
-        {
-            await DisplayAlert("FAQ", "This would open the FAQ page.", "OK");
-        }
+        Preferences.Clear();
 
-        private async void DataPrivacy_Tapped(object sender, EventArgs e)
-        {
-            await DisplayAlert("Data Privacy", "This would open the Data Privacy Terms page.", "OK");
-        }
+        await DisplayAlert(
+            "Success",
+            "Cache cleared successfully.",
+            "OK");
 
-        private async void TermsConditions_Tapped(object sender, EventArgs e)
-        {
-            await DisplayAlert("Terms & Conditions", "This would open the Terms and Conditions page.", "OK");
-        }
+        // Optional: force logout after cache clear
+        Application.Current.CloseWindow(
+            Application.Current.Windows[0]);
 
-        private async void SignOut_Tapped(object sender, EventArgs e)
-        {
-            bool confirm = await DisplayAlert("Sign Out",
-                "Are you sure you want to sign out?",
-                "Yes", "No");
+        Application.Current.OpenWindow(
+            new Window(new NavigationPage(new SplashPage())));
+    }
 
-            if (confirm)
-            {
-                // Clear user preferences
-                Preferences.Remove("username");
 
-            // Navigate back to splash screen
-            if (Application.Current.Windows.Count > 0)
-            {
-                Application.Current.Windows[0].Page = new NavigationPage(new SplashPage());
-            }
-        }
-        }
 
-        public new event PropertyChangedEventHandler? PropertyChanged;
+    private async void SignOut_Tapped(object sender, EventArgs e)
+    {
+        bool confirm = await DisplayAlert(
+            "Sign Out",
+            "Are you sure you want to sign out?",
+            "Yes",
+            "No");
+
+        if (!confirm)
+            return;
+
+        // Clear user data
+        Preferences.Remove("username");
+        Preferences.Remove("IsDarkTheme");
+
+        // Recreate the window so CreateWindow() runs again
+        Application.Current.CloseWindow(
+            Application.Current.Windows[0]);
+
+        Application.Current.OpenWindow(
+            new Window(new NavigationPage(new SplashPage())));
+    }
+
+
+    public new event PropertyChangedEventHandler? PropertyChanged;
 
         protected new void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {

@@ -27,12 +27,6 @@
                 ContentTemplate="{DataTemplate local:Settings}"
                 Route="SettingPage" />
         </Tab>
-        <Tab Title="MoviePage" Icon="movieIcon.png">
-            <ShellContent 
-             Title="MovieDetailsPage"
-             ContentTemplate="{DataTemplate local:MovieDetailsPage}"
-             Route="MovieDetailsPage" />
-        </Tab>
     </TabBar>
 
 </Shell>
