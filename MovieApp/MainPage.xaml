@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MovieApp.MainPage"
-             BackgroundColor="#0F0F0F">
+             BackgroundColor="{Binding BackgroundColor}">
 
     <Grid RowDefinitions="Auto,*">
 
@@ -10,8 +10,8 @@
         <BoxView Grid.RowSpan="2">
             <BoxView.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#1a1a1a" Offset="0.0"/>
-                    <GradientStop Color="#0F0F0F" Offset="1.0"/>
+                    <GradientStop Color="{Binding BackgroundGradientStart}" Offset="0.0"/>
+                    <GradientStop Color="{Binding BackgroundGradientEnd}" Offset="1.0"/>
                 </LinearGradientBrush>
             </BoxView.Background>
         </BoxView>
@@ -26,10 +26,10 @@
                            Text="Hello, Guest!"
                            FontSize="32"
                            FontAttributes="Bold"
-                           TextColor="White"/>
+                           TextColor="{Binding TextColor}"/>
                     <Label Text="Welcome back to your cinema"
                            FontSize="16"
-                           TextColor="#999"/>
+                           TextColor="{Binding SubtextColor}"/>
                 </VerticalStackLayout>
 
                 <!-- Stats Cards -->
@@ -40,8 +40,8 @@
 
                     <!-- Total Movies -->
                     <Border Grid.Row="0" Grid.Column="0"
-                            BackgroundColor="#1a1a1a"
-                            Stroke="#FFB800"
+                            BackgroundColor="{Binding CardBackgroundColor}"
+                            Stroke="{Binding AccentColor}"
                             StrokeThickness="1"
                             Padding="20">
                         <Border.StrokeShape>
@@ -53,43 +53,43 @@
                                    Text="0"
                                    FontSize="28"
                                    FontAttributes="Bold"
-                                   TextColor="#FFB800"
+                                   TextColor="{Binding AccentColor}"
                                    HorizontalOptions="Center"/>
                             <Label Text="Total Movies"
                                    FontSize="12"
-                                   TextColor="#999"
+                                   TextColor="{Binding SubtextColor}"
                                    HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </Border>
 
                     <!-- Watched -->
                     <Border Grid.Row="0" Grid.Column="1"
-                            BackgroundColor="#1a1a1a"
-                            Stroke="#4CAF50"
+                            BackgroundColor="{Binding CardBackgroundColor}"
+                            Stroke="{Binding GreenAccent}"
                             StrokeThickness="1"
                             Padding="20">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="15"/>
                         </Border.StrokeShape>
                         <VerticalStackLayout Spacing="8">
-                            <Label Text="✓" FontSize="32" TextColor="#4CAF50" HorizontalOptions="Center"/>
+                            <Label Text="✓" FontSize="32" TextColor="{Binding GreenAccent}" HorizontalOptions="Center"/>
                             <Label x:Name="WatchedCountLabel"
                                    Text="0"
                                    FontSize="28"
                                    FontAttributes="Bold"
-                                   TextColor="#4CAF50"
+                                   TextColor="{Binding GreenAccent}"
                                    HorizontalOptions="Center"/>
                             <Label Text="Watched"
                                    FontSize="12"
-                                   TextColor="#999"
+                                   TextColor="{Binding SubtextColor}"
                                    HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </Border>
 
                     <!-- Reviews -->
                     <Border Grid.Row="1" Grid.Column="0"
-                            BackgroundColor="#1a1a1a"
-                            Stroke="#FF6B00"
+                            BackgroundColor="{Binding CardBackgroundColor}"
+                            Stroke="{Binding OrangeAccent}"
                             StrokeThickness="1"
                             Padding="20">
                         <Border.StrokeShape>
@@ -101,19 +101,19 @@
                                    Text="0"
                                    FontSize="28"
                                    FontAttributes="Bold"
-                                   TextColor="#FF6B00"
+                                   TextColor="{Binding OrangeAccent}"
                                    HorizontalOptions="Center"/>
                             <Label Text="Reviews"
                                    FontSize="12"
-                                   TextColor="#999"
+                                   TextColor="{Binding SubtextColor}"
                                    HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </Border>
 
                     <!-- Avg Rating -->
                     <Border Grid.Row="1" Grid.Column="1"
-                            BackgroundColor="#1a1a1a"
-                            Stroke="#2196F3"
+                            BackgroundColor="{Binding CardBackgroundColor}"
+                            Stroke="{Binding BlueAccent}"
                             StrokeThickness="1"
                             Padding="20">
                         <Border.StrokeShape>
@@ -125,11 +125,11 @@
                                    Text="0.0"
                                    FontSize="28"
                                    FontAttributes="Bold"
-                                   TextColor="#2196F3"
+                                   TextColor="{Binding BlueAccent}"
                                    HorizontalOptions="Center"/>
                             <Label Text="Avg Rating"
                                    FontSize="12"
-                                   TextColor="#999"
+                                   TextColor="{Binding SubtextColor}"
                                    HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </Border>
@@ -141,12 +141,12 @@
                     <Label Text="⭐ Top Rated Movies"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="White"/>
+                           TextColor="{Binding TextColor}"/>
 
                     <Label Grid.Column="1"
                            Text="See All →"
                            FontSize="14"
-                           TextColor="#FFB800"
+                           TextColor="{Binding AccentColor}"
                            VerticalOptions="Center">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Tapped="SeeAllTopRated_Clicked"/>
@@ -166,14 +166,14 @@
                     <Label Text="📝 Your Recent Reviews"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="White"/>
+                           TextColor="{Binding TextColor}"/>
 
                     <VerticalStackLayout x:Name="RecentReviewsContainer"
                                          Spacing="12">
                         <Label x:Name="NoReviewsLabel"
                                Text="No reviews yet. Start reviewing movies!"
                                FontSize="14"
-                               TextColor="#666"
+                               TextColor="{Binding SubtextColor}"
                                HorizontalOptions="Center"
                                Margin="0,20"/>
                     </VerticalStackLayout>
@@ -184,12 +184,12 @@
                     <Label Text="🚀 Quick Actions"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="White"/>
+                           TextColor="{Binding TextColor}"/>
 
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="15">
 
                         <Border Grid.Column="0"
-                                BackgroundColor="#FFB800"
+                                BackgroundColor="{Binding AccentColor}"
                                 Padding="20,15">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="12"/>
@@ -207,8 +207,8 @@
                         </Border>
 
                         <Border Grid.Column="1"
-                                BackgroundColor="#1a1a1a"
-                                Stroke="#FFB800"
+                                BackgroundColor="{Binding CardBackgroundColor}"
+                                Stroke="{Binding AccentColor}"
                                 StrokeThickness="2"
                                 Padding="20,15">
                             <Border.StrokeShape>
@@ -222,7 +222,7 @@
                                 <Label Text="Random"
                                        FontSize="16"
                                        FontAttributes="Bold"
-                                       TextColor="#FFB800"/>
+                                       TextColor="{Binding AccentColor}"/>
                             </HorizontalStackLayout>
                         </Border>
 
@@ -241,7 +241,7 @@
                                  HorizontalOptions="Center"
                                  Spacing="15">
                 <ActivityIndicator IsRunning="True"
-                                   Color="#FFB800"
+                                   Color="{Binding AccentColor}"
                                    WidthRequest="50"
                                    HeightRequest="50"/>
                 <Label Text="Loading your cinema..."
