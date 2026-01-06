@@ -44,9 +44,11 @@ namespace MovieApp
             };
         }
 
+        /// <summary>
         /// Gets an appropriate emoji for the movie's primary genre
-  
-        private static string GetEmojiForGenre(List<string> genres)
+        /// Made public so TMDBService can use it
+        /// </summary>
+        public static string GetEmojiForGenre(List<string> genres)
         {
             if (genres == null || genres.Count == 0)
                 return "🎬";
@@ -66,13 +68,16 @@ namespace MovieApp
                 { "Mystery", "🔍" },
                 { "Romance", "❤️" },
                 { "Sci-Fi", "🚀" },
+                { "Science Fiction", "🚀" }, // TMDB uses "Science Fiction"
                 { "Thriller", "😱" },
                 { "Western", "🤠" },
                 { "War", "⚔️" },
                 { "Musical", "🎵" },
+                { "Music", "🎵" },
                 { "Biography", "📖" },
                 { "History", "🏛️" },
-                { "Sport", "⚽" }
+                { "Sport", "⚽" },
+                { "TV Movie", "📺" }
             };
 
             // Return emoji for first matching genre

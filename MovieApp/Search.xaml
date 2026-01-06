@@ -3,33 +3,49 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="MovieApp.Search"
-    BackgroundColor="#0F0F0F">
+    BackgroundColor="{Binding BackgroundColor}">
 
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- Search Bar -->
-        <Grid Grid.Row="0" Margin="15">
-            <Entry x:Name="SearchEntry"
-                   Placeholder="Search movies..."
-                   TextChanged="SearchEntry_TextChanged"
-                   BackgroundColor="#1a1a1a"
-                   TextColor="White"
-                   HorizontalOptions="FillAndExpand"/>
+        <Grid Grid.Row="0" Margin="15" ColumnDefinitions="*,Auto">
+            <Border Grid.Column="0"
+                    BackgroundColor="{Binding SearchBarBackground}"
+                    Stroke="{Binding BorderColor}"
+                    StrokeThickness="1"
+                    Padding="15,10"
+                    Margin="0,0,10,0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12"/>
+                </Border.StrokeShape>
+                <Entry x:Name="SearchEntry"
+                       Placeholder="Search movies..."
+                       PlaceholderColor="{Binding SubtextColor}"
+                       TextChanged="SearchEntry_TextChanged"
+                       BackgroundColor="Transparent"
+                       TextColor="{Binding TextColor}"
+                       HorizontalOptions="FillAndExpand"/>
+            </Border>
 
             <Button x:Name="ClearButton"
-                    Text="X"
+                    Grid.Column="1"
+                    Text="✕"
                     Clicked="ClearSearch_Clicked"
                     IsVisible="False"
-                    BackgroundColor="#FFB800"
+                    BackgroundColor="{Binding AccentColor}"
                     TextColor="Black"
-                    HorizontalOptions="End"
-                    VerticalOptions="Center"/>
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    WidthRequest="44"
+                    HeightRequest="44"
+                    CornerRadius="12"/>
         </Grid>
 
         <!-- Genre Chips -->
         <ScrollView Grid.Row="1"
                     Orientation="Horizontal"
-                    HorizontalScrollBarVisibility="Never">
+                    HorizontalScrollBarVisibility="Never"
+                    Margin="0,5,0,10">
             <HorizontalStackLayout x:Name="GenreChipsContainer"
                                    Spacing="10"
                                    Padding="15">
@@ -46,19 +62,37 @@
         </ScrollView>
 
         <!-- Loading -->
-        <ActivityIndicator x:Name="LoadingIndicator"
-                           IsRunning="False"
-                           IsVisible="False"
-                           Color="#FFB800"
-                           VerticalOptions="Center"
-                           HorizontalOptions="Center"/>
+        <Grid Grid.Row="2" x:Name="LoadingContainer" IsVisible="False">
+            <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="15">
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   Color="{Binding AccentColor}"
+                                   WidthRequest="50"
+                                   HeightRequest="50"/>
+                <Label Text="Loading movies..."
+                       TextColor="{Binding SubtextColor}"
+                       FontSize="16"/>
+            </VerticalStackLayout>
+        </Grid>
 
         <!-- No Results -->
-        <Label x:Name="NoResultsView"
-               Text="No movies found"
-               IsVisible="False"
-               TextColor="#777"
-               HorizontalOptions="Center"
-               VerticalOptions="Center"/>
+        <VerticalStackLayout Grid.Row="2" 
+                             x:Name="NoResultsView"
+                             IsVisible="False"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="15">
+            <Label Text="🔍"
+                   FontSize="48"
+                   HorizontalOptions="Center"/>
+            <Label Text="No movies found"
+                   TextColor="{Binding SubtextColor}"
+                   FontSize="18"
+                   HorizontalOptions="Center"/>
+            <Label Text="Try adjusting your search or filters"
+                   TextColor="{Binding SubtextColor}"
+                   FontSize="14"
+                   HorizontalOptions="Center"/>
+        </VerticalStackLayout>
     </Grid>
 </ContentPage>

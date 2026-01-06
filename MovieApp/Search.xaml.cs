@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
@@ -17,6 +16,7 @@ namespace MovieApp
         private HashSet<string> _selectedGenres = new();
         private bool _isNavigating;
         private string _searchText = "";
+        private readonly ThemeManager _themeManager;
 
         private CancellationTokenSource _searchDebounceToken;
 
@@ -48,6 +48,27 @@ namespace MovieApp
         public Search()
         {
             InitializeComponent();
+
+            // Get theme manager and bind
+            _themeManager = ThemeManager.Instance;
+            BindingContext = _themeManager;
+
+            // Listen for theme changes to refresh genre chips
+            _themeManager.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(_themeManager.IsDarkTheme))
+                {
+                    // Refresh genre chips with new theme
+                    if (_allMovies.Count > 0)
+                    {
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            SetupGenreFilters();
+                            DisplayMovies(_filteredMovies);
+                        });
+                    }
+                }
+            };
         }
 
         protected override async void OnAppearing()
@@ -72,7 +93,7 @@ namespace MovieApp
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Error", ex.Message, "OK");
+                await DisplayAlert("Error", $"Failed to load movies: {ex.Message}", "OK");
             }
             finally
             {
@@ -82,6 +103,7 @@ namespace MovieApp
 
         private void ShowLoading(bool show)
         {
+            LoadingContainer.IsVisible = show;
             LoadingIndicator.IsVisible = show;
             LoadingIndicator.IsRunning = show;
             ResultsScrollView.IsVisible = !show;
@@ -105,7 +127,7 @@ namespace MovieApp
             {
                 if (!t.IsCanceled)
                     MainThread.BeginInvokeOnMainThread(ApplyFilters);
-            });
+            }, TaskScheduler.Default);
         }
 
         private void ClearSearch_Clicked(object sender, EventArgs e)
@@ -154,22 +176,32 @@ namespace MovieApp
                 VerticalOptions = LayoutOptions.Center
             });
 
-            stackLayout.Children.Add(new Label
+            var textLabel = new Label
             {
                 Text = genre,
-                TextColor = selected ? Colors.Black : Colors.White,
+                TextColor = selected ? Colors.Black : _themeManager.TextColor,
                 FontAttributes = selected ? FontAttributes.Bold : FontAttributes.None,
                 VerticalOptions = LayoutOptions.Center,
                 FontSize = 14
-            });
+            };
+
+            stackLayout.Children.Add(textLabel);
 
             var border = new Border
             {
                 StrokeShape = new RoundRectangle { CornerRadius = 20 },
                 Padding = new Thickness(15, 8),
-                BackgroundColor = selected ? Color.FromArgb("#FFB800") : Color.FromArgb("#1a1a1a"),
-                Stroke = selected ? Color.FromArgb("#FFB800") : Color.FromArgb("#333"),
+                BackgroundColor = selected ? _themeManager.AccentColor : _themeManager.CardBackgroundColor,
+                Stroke = selected ? _themeManager.AccentColor : _themeManager.BorderColor,
+                StrokeThickness = 1,
                 Content = stackLayout
+            };
+
+            border.Shadow = new Shadow
+            {
+                Brush = selected ? _themeManager.AccentColor : Colors.Transparent,
+                Radius = 12,
+                Opacity = 0.6f
             };
 
             var tap = new TapGestureRecognizer();
@@ -181,14 +213,20 @@ namespace MovieApp
                 await border.ScaleTo(1.0, 80);
                 ToggleGenre(genre, border, stackLayout);
             };
-            border.Shadow = new Shadow
-            {
-                Brush = selected ? Color.FromArgb("#FFB800") : Colors.Transparent,
-                Radius = 12,
-                Opacity = 0.6f
-            };
 
             border.GestureRecognizers.Add(tap);
+
+            // Subscribe to theme changes
+            _themeManager.PropertyChanged += (s, e) =>
+            {
+                if (!selected)
+                {
+                    border.BackgroundColor = _themeManager.CardBackgroundColor;
+                    border.Stroke = _themeManager.BorderColor;
+                    textLabel.TextColor = _themeManager.TextColor;
+                }
+            };
+
             return border;
         }
 
@@ -206,12 +244,14 @@ namespace MovieApp
 
                 bool isSelected = _selectedGenres.Contains(genre);
                 chip.BackgroundColor = isSelected
-                    ? Color.FromArgb("#FFB800")
-                    : Color.FromArgb("#1a1a1a");
+                    ? _themeManager.AccentColor
+                    : _themeManager.CardBackgroundColor;
+
+                chip.Stroke = isSelected ? _themeManager.AccentColor : _themeManager.BorderColor;
 
                 chip.Shadow = new Shadow
                 {
-                    Brush = isSelected ? Color.FromArgb("#FFB800") : Colors.Transparent,
+                    Brush = isSelected ? _themeManager.AccentColor : Colors.Transparent,
                     Radius = 12,
                     Opacity = 0.6f
                 };
@@ -220,7 +260,7 @@ namespace MovieApp
                 var textLabel = content.Children.OfType<Label>().LastOrDefault();
                 if (textLabel != null)
                 {
-                    textLabel.TextColor = isSelected ? Colors.Black : Colors.White;
+                    textLabel.TextColor = isSelected ? Colors.Black : _themeManager.TextColor;
                     textLabel.FontAttributes = isSelected ? FontAttributes.Bold : FontAttributes.None;
                 }
             }
@@ -265,13 +305,14 @@ namespace MovieApp
             var posterBorder = new Border
             {
                 StrokeShape = new RoundRectangle { CornerRadius = 10 },
-                Stroke = Color.FromArgb("#333"),
-                StrokeThickness = 1,
                 WidthRequest = 100,
                 HeightRequest = 150,
-                BackgroundColor = Color.FromArgb("#222"),
                 VerticalOptions = LayoutOptions.Center
             };
+
+            // Bind poster border colors
+            posterBorder.SetBinding(Border.StrokeProperty, new Binding(nameof(_themeManager.BorderColor), source: _themeManager));
+            posterBorder.SetBinding(Border.BackgroundColorProperty, new Binding(nameof(_themeManager.CardBackgroundColor), source: _themeManager));
 
             var posterImage = new Image
             {
@@ -280,21 +321,30 @@ namespace MovieApp
                 VerticalOptions = LayoutOptions.Fill
             };
 
-            // Check if poster is a URL or local file
+            // Use TMDBImageHelper to get proper poster URL
             if (!string.IsNullOrEmpty(movie.poster))
             {
-                if (movie.poster.StartsWith("http://") || movie.poster.StartsWith("https://"))
+                string posterUrl = TMDBImageHelper.GetSmartPosterUrl(movie.poster, TMDBImageHelper.PosterSize.Small);
+
+                if (!string.IsNullOrEmpty(posterUrl))
                 {
-                    posterImage.Source = new UriImageSource
+                    if (posterUrl.StartsWith("http://") || posterUrl.StartsWith("https://"))
                     {
-                        Uri = new Uri(movie.poster),
-                        CachingEnabled = true,
-                        CacheValidity = TimeSpan.FromDays(1)
-                    };
+                        posterImage.Source = new UriImageSource
+                        {
+                            Uri = new Uri(posterUrl),
+                            CachingEnabled = true,
+                            CacheValidity = TimeSpan.FromDays(7)
+                        };
+                    }
+                    else
+                    {
+                        posterImage.Source = posterUrl;
+                    }
                 }
                 else
                 {
-                    posterImage.Source = movie.poster;
+                    posterImage.Source = "placeholder_movie.png";
                 }
             }
             else
@@ -318,12 +368,12 @@ namespace MovieApp
             var titleLabel = new Label
             {
                 Text = movie.title,
-                TextColor = Colors.White,
                 FontSize = 18,
                 FontAttributes = FontAttributes.Bold,
                 LineBreakMode = LineBreakMode.WordWrap,
                 MaxLines = 2
             };
+            titleLabel.SetBinding(Label.TextColorProperty, new Binding(nameof(_themeManager.TextColor), source: _themeManager));
 
             var infoStack = new HorizontalStackLayout
             {
@@ -332,22 +382,24 @@ namespace MovieApp
 
             if (movie.year > 0)
             {
-                infoStack.Children.Add(new Label
+                var yearLabel = new Label
                 {
                     Text = movie.year.ToString(),
-                    TextColor = Color.FromArgb("#999"),
                     FontSize = 14
-                });
+                };
+                yearLabel.SetBinding(Label.TextColorProperty, new Binding(nameof(_themeManager.SubtextColor), source: _themeManager));
+                infoStack.Children.Add(yearLabel);
             }
 
             if (movie.rating > 0)
             {
-                infoStack.Children.Add(new Label
+                var ratingLabel = new Label
                 {
                     Text = $"⭐ {movie.rating:F1}",
-                    TextColor = Color.FromArgb("#FFB800"),
                     FontSize = 14
-                });
+                };
+                ratingLabel.SetBinding(Label.TextColorProperty, new Binding(nameof(_themeManager.AccentColor), source: _themeManager));
+                infoStack.Children.Add(ratingLabel);
             }
 
             var genreLabel = new Label
@@ -355,11 +407,11 @@ namespace MovieApp
                 Text = movie.genre != null && movie.genre.Count > 0
                     ? string.Join(" • ", movie.genre)
                     : "Unknown",
-                TextColor = Color.FromArgb("#999"),
                 FontSize = 13,
                 LineBreakMode = LineBreakMode.TailTruncation,
                 MaxLines = 1
             };
+            genreLabel.SetBinding(Label.TextColorProperty, new Binding(nameof(_themeManager.SubtextColor), source: _themeManager));
 
             detailsStack.Children.Add(titleLabel);
             detailsStack.Children.Add(infoStack);
@@ -371,9 +423,7 @@ namespace MovieApp
             // Main Border
             var border = new Border
             {
-                Stroke = Color.FromArgb("#333"),
                 StrokeShape = new RoundRectangle { CornerRadius = 15 },
-                BackgroundColor = Color.FromArgb("#1a1a1a"),
                 Content = grid,
                 Margin = new Thickness(5),
                 Shadow = new Shadow
@@ -383,6 +433,10 @@ namespace MovieApp
                     Opacity = 0.3f
                 }
             };
+
+            // Bind border colors
+            border.SetBinding(Border.StrokeProperty, new Binding(nameof(_themeManager.BorderColor), source: _themeManager));
+            border.SetBinding(Border.BackgroundColorProperty, new Binding(nameof(_themeManager.CardBackgroundColor), source: _themeManager));
 
             var tapGesture = new TapGestureRecognizer();
             tapGesture.Tapped += async (_, _) => await MovieCard_Tapped(movie);
@@ -432,6 +486,10 @@ namespace MovieApp
             {
                 _isNavigating = true;
                 await Navigation.PushAsync(new MovieDetailsPage(movie));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", $"Failed to open movie details: {ex.Message}", "OK");
             }
             finally
             {
