@@ -1,114 +1,32 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using MovieProject;
 
-namespace MovieApp;
-
-
-
+namespace MovieApp
+{
     public partial class Settings : ContentPage, INotifyPropertyChanged
     {
-        private bool _isDarkTheme;
-        private Color _backgroundColor;
-        private Color _textColor;
-        private Color _subtextColor;
-        private Color _cardBackgroundColor;
-        private Color _iconBackgroundColor;
-        private Color _sectionHeaderColor;
-
-        public bool IsDarkTheme
-        {
-            get => _isDarkTheme;
-            set
-            {
-                _isDarkTheme = value;
-                UpdateThemeColors();
-                OnPropertyChanged();
-            }
-        }
-
-        public Color BackgroundColor
-        {
-            get => _backgroundColor;
-            set { _backgroundColor = value; OnPropertyChanged(); }
-        }
-
-        public Color TextColor
-        {
-            get => _textColor;
-            set { _textColor = value; OnPropertyChanged(); }
-        }
-
-        public Color SubtextColor
-        {
-            get => _subtextColor;
-            set { _subtextColor = value; OnPropertyChanged(); }
-        }
-
-        public Color CardBackgroundColor
-        {
-            get => _cardBackgroundColor;
-            set { _cardBackgroundColor = value; OnPropertyChanged(); }
-        }
-
-        public Color IconBackgroundColor
-        {
-            get => _iconBackgroundColor;
-            set { _iconBackgroundColor = value; OnPropertyChanged(); }
-        }
-
-        public Color SectionHeaderColor
-        {
-            get => _sectionHeaderColor;
-            set { _sectionHeaderColor = value; OnPropertyChanged(); }
-        }
+        private readonly ThemeManager _themeManager;
 
         public Settings()
         {
             InitializeComponent();
 
-            // Load saved theme preference
-            IsDarkTheme = Preferences.Get("IsDarkTheme", true);
-            ThemeSwitch.IsToggled = IsDarkTheme;
+            // Get theme manager instance
+            _themeManager = ThemeManager.Instance;
 
-            BindingContext = this;
-        }
+            // Set initial switch state
+            ThemeSwitch.IsToggled = _themeManager.IsDarkTheme;
 
-        private void UpdateThemeColors()
-        {
-            if (IsDarkTheme)
-            {
-                // Dark Theme Colors
-                BackgroundColor = Color.FromArgb("#2d2d2d");
-                TextColor = Colors.White;
-                SubtextColor = Color.FromArgb("#999999");
-                CardBackgroundColor = Color.FromArgb("#3d3d3d");
-                IconBackgroundColor = Color.FromArgb("#4d4d4d");
-                SectionHeaderColor = Color.FromArgb("#888888");
-            }
-            else
-            {
-                // Light Theme Colors
-                BackgroundColor = Color.FromArgb("#F5F5F5");
-                TextColor = Colors.Black;
-                SubtextColor = Color.FromArgb("#666666");
-                CardBackgroundColor = Colors.White;
-                IconBackgroundColor = Color.FromArgb("#F0F0F0");
-                SectionHeaderColor = Color.FromArgb("#888888");
-            }
-
-            // Save preference
-            Preferences.Set("IsDarkTheme", IsDarkTheme);
+            // Bind to theme manager
+            BindingContext = _themeManager;
         }
 
         private void ThemeSwitch_Toggled(object sender, ToggledEventArgs e)
         {
-            IsDarkTheme = e.Value;
+            // Update theme manager - this will notify all pages
+            _themeManager.IsDarkTheme = e.Value;
         }
 
         private async void Back_Clicked(object sender, EventArgs e)
@@ -118,65 +36,101 @@ namespace MovieApp;
 
         private async void LeaveFeedback_Tapped(object sender, EventArgs e)
         {
-            await DisplayAlert("Leave Feedback", "This would open a feedback form.", "OK");
+            bool result = await DisplayAlert(
+                "Leave Feedback",
+                "Would you like to send feedback to the developers?",
+                "Yes",
+                "Cancel");
+
+            if (result)
+            {
+                await DisplayAlert(
+                    "Thank You!",
+                    "Your feedback helps us improve the app.",
+                    "OK");
+            }
         }
 
-    private async void ClearCache_Tapped(object sender, EventArgs e)
-    {
-        bool confirm = await DisplayAlert(
-            "Clear Cache",
-            "This will reset all app settings. Continue?",
-            "Yes",
-            "No");
+        private async void ClearCache_Tapped(object sender, EventArgs e)
+        {
+            bool confirm = await DisplayAlert(
+                "Clear Cache",
+                "This will reset all app settings and preferences. Continue?",
+                "Yes",
+                "No");
 
-        if (!confirm)
-            return;
+            if (!confirm)
+                return;
 
-        Preferences.Clear();
+            try
+            {
+                // Clear all preferences
+                Preferences.Clear();
 
-        await DisplayAlert(
-            "Success",
-            "Cache cleared successfully.",
-            "OK");
+                // Clear secure storage (reviews, watched movies, etc.)
+                SecureStorage.RemoveAll();
 
-        // Optional: force logout after cache clear
-        Application.Current.CloseWindow(
-            Application.Current.Windows[0]);
+                // Reset theme to default
+                _themeManager.ResetToDefault();
 
-        Application.Current.OpenWindow(
-            new Window(new NavigationPage(new SplashPage())));
-    }
+                await DisplayAlert(
+                    "Success",
+                    "Cache cleared successfully. Please restart the app.",
+                    "OK");
 
+                // Restart the app
+                Application.Current?.CloseWindow(Application.Current.Windows[0]);
+                Application.Current?.OpenWindow(new Window(new NavigationPage(new SplashPage())));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert(
+                    "Error",
+                    $"Failed to clear cache: {ex.Message}",
+                    "OK");
+            }
+        }
 
+        private async void SignOut_Tapped(object sender, EventArgs e)
+        {
+            bool confirm = await DisplayAlert(
+                "Sign Out",
+                "Are you sure you want to sign out?",
+                "Yes",
+                "No");
 
-    private async void SignOut_Tapped(object sender, EventArgs e)
-    {
-        bool confirm = await DisplayAlert(
-            "Sign Out",
-            "Are you sure you want to sign out?",
-            "Yes",
-            "No");
+            if (!confirm)
+                return;
 
-        if (!confirm)
-            return;
+            try
+            {
+                // Clear user-specific data but keep theme preference
+                Preferences.Remove("username");
+                SecureStorage.RemoveAll();
 
-        // Clear user data
-        Preferences.Remove("username");
-        Preferences.Remove("IsDarkTheme");
+                await DisplayAlert(
+                    "Signed Out",
+                    "You have been signed out successfully.",
+                    "OK");
 
-        // Recreate the window so CreateWindow() runs again
-        Application.Current.CloseWindow(
-            Application.Current.Windows[0]);
+                // Return to splash/login page
+                Application.Current?.CloseWindow(Application.Current.Windows[0]);
+                Application.Current?.OpenWindow(new Window(new NavigationPage(new SplashPage())));
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert(
+                    "Error",
+                    $"Failed to sign out: {ex.Message}",
+                    "OK");
+            }
+        }
 
-        Application.Current.OpenWindow(
-            new Window(new NavigationPage(new SplashPage())));
-    }
-
-
-    public new event PropertyChangedEventHandler? PropertyChanged;
+        public new event PropertyChangedEventHandler? PropertyChanged;
 
         protected new void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
+}

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Shapes;
 using MovieProject;
 using System;
 using System.Collections.Generic;
@@ -19,11 +20,16 @@ namespace MovieApp
         private Button[] _starButtons;
         private Button[] _emojiButtons;
         private List<SimilarMovie> _allSimilarMovies;
+        private readonly ThemeManager _themeManager;
 
         public MovieDetailsPage()
         {
             InitializeComponent();
             InitializeButtons();
+
+            // Get theme manager and bind
+            _themeManager = ThemeManager.Instance;
+            BindingContext = _themeManager;
         }
 
         // Constructor that accepts a Movie object
@@ -82,7 +88,7 @@ namespace MovieApp
                 var watchedJson = await SecureStorage.GetAsync("watched_movies");
                 var watchedList = string.IsNullOrEmpty(watchedJson)
                     ? new List<string>()
-                    : JsonSerializer.Deserialize<List<string>>(watchedJson);
+                    : JsonSerializer.Deserialize<List<string>>(watchedJson) ?? new List<string>();
 
                 if (!watchedList.Contains(_currentMovie.title))
                 {
@@ -99,24 +105,34 @@ namespace MovieApp
         {
             if (_currentMovie == null) return;
 
-            // Handle poster image - check if it's a URL or local file
+            // Handle poster image using TMDBImageHelper
             try
             {
                 if (!string.IsNullOrWhiteSpace(_currentMovie.poster))
                 {
-                    if (_currentMovie.poster.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                        _currentMovie.poster.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    // Use TMDBImageHelper to get proper poster URL (Large size for details page)
+                    string posterUrl = TMDBImageHelper.GetSmartPosterUrl(_currentMovie.poster, TMDBImageHelper.PosterSize.Large);
+
+                    if (!string.IsNullOrEmpty(posterUrl))
                     {
-                        MoviePoster.Source = new UriImageSource
+                        if (posterUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                            posterUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                         {
-                            Uri = new Uri(_currentMovie.poster),
-                            CachingEnabled = true,
-                            CacheValidity = TimeSpan.FromDays(1)
-                        };
+                            MoviePoster.Source = new UriImageSource
+                            {
+                                Uri = new Uri(posterUrl),
+                                CachingEnabled = true,
+                                CacheValidity = TimeSpan.FromDays(7)
+                            };
+                        }
+                        else
+                        {
+                            MoviePoster.Source = posterUrl;
+                        }
                     }
                     else
                     {
-                        MoviePoster.Source = _currentMovie.poster;
+                        MoviePoster.Source = "placeholder_movie.png";
                     }
                 }
                 else
@@ -155,8 +171,8 @@ namespace MovieApp
             WatchedBadge.IsVisible = _currentReview.IsWatched;
             WatchedButton.Text = _currentReview.IsWatched ? "✓ Watched" : "Mark as Watched";
             WatchedButton.BackgroundColor = _currentReview.IsWatched
-                ? Color.FromArgb("#2196F3")
-                : Color.FromArgb("#4CAF50");
+                ? _themeManager.BlueAccent
+                : _themeManager.GreenAccent;
         }
 
         private void UpdateStarDisplay(int rating)
@@ -164,7 +180,7 @@ namespace MovieApp
             for (int i = 0; i < _starButtons.Length; i++)
             {
                 _starButtons[i].Text = i < rating ? "★" : "☆";
-                _starButtons[i].TextColor = i < rating ? Color.FromArgb("#FFB800") : Color.FromArgb("#666");
+                _starButtons[i].TextColor = i < rating ? _themeManager.AccentColor : Color.FromArgb("#666");
             }
             RatingText.Text = rating > 0 ? $"{rating} star{(rating != 1 ? "s" : "")}" : "Not rated";
         }
@@ -176,7 +192,7 @@ namespace MovieApp
             foreach (var button in _emojiButtons)
             {
                 button.BackgroundColor = selectedEmojis.Contains(button.Text)
-                    ? Color.FromArgb("#FFB800")
+                    ? _themeManager.AccentColor
                     : Color.FromArgb("#2a2a2a");
             }
         }
@@ -216,7 +232,7 @@ namespace MovieApp
             else
             {
                 _currentReview.SelectedEmojis.Add(emoji);
-                clickedEmoji.BackgroundColor = Color.FromArgb("#FFB800");
+                clickedEmoji.BackgroundColor = _themeManager.AccentColor;
             }
 
             await clickedEmoji.ScaleTo(1.2, 80, Easing.CubicOut);
@@ -228,62 +244,41 @@ namespace MovieApp
         {
             _currentReview ??= new MovieReview { MovieName = _currentMovie?.title };
             _currentReview.IsWatched = !_currentReview.IsWatched;
-
-            if (_currentReview.IsWatched)
-                _currentReview.DateWatched = DateTime.Now;
+            _currentReview.DateWatched = _currentReview.IsWatched ? DateTime.Now : null;
 
             UpdateReviewUI();
             await SaveReviewAsync();
 
-            string message = _currentReview.IsWatched ? "Added to your watched list!" : "Removed from watched list";
+            string message = _currentReview.IsWatched
+                ? "Marked as watched! 🎬"
+                : "Removed from watched list.";
             await DisplayAlert("Success", message, "OK");
         }
 
         private async void ShareReview_Clicked(object sender, EventArgs e)
         {
-            if (_currentReview == null || (_currentReview.Rating == 0 && _currentReview.SelectedEmojis.Count == 0))
+            if (_currentReview == null || _currentReview.Rating == 0)
             {
-                await DisplayAlert("No Review", "Please rate the movie or add reactions before sharing!", "OK");
+                await DisplayAlert("No Review", "Please rate this movie first!", "OK");
                 return;
             }
 
-            string reviewText = $"🎬 {_currentMovie.title}\n";
-            if (_currentReview.Rating > 0) reviewText += $"⭐ Rating: {_currentReview.Rating}/5 stars\n";
-            if (_currentReview.SelectedEmojis.Count > 0) reviewText += $"Reactions: {string.Join(" ", _currentReview.SelectedEmojis)}\n";
-            if (_currentReview.IsWatched && _currentReview.DateWatched.HasValue)
-                reviewText += $"\n✓ Watched on {_currentReview.DateWatched.Value:MMM dd, yyyy}";
+            string shareText = $"I rated '{_currentMovie.title}' {_currentReview.Rating} stars! 🌟";
+            if (_currentReview.SelectedEmojis.Count > 0)
+            {
+                shareText += $"\n{string.Join(" ", _currentReview.SelectedEmojis)}";
+            }
 
-            try
+            await Share.RequestAsync(new ShareTextRequest
             {
-                await Share.Default.RequestAsync(new ShareTextRequest
-                {
-                    Text = reviewText,
-                    Title = $"My review of {_currentMovie.title}"
-                });
-            }
-            catch
-            {
-                await DisplayAlert("Error", "Could not share review", "OK");
-            }
+                Text = shareText,
+                Title = "Share Movie Review"
+            });
         }
 
-        private void PlayMovie_Clicked(object sender, EventArgs e)
+        private async void PlayMovie_Clicked(object sender, EventArgs e)
         {
-            // Use trailer URL from movie if available, otherwise use default
-            string trailerUrl = "https://www.youtube.com/watch?v=Ke1Y3P9D0Bc"; // Default trailer
-
-            // Check if movie has a trailerUrl property
-            var trailerProperty = _currentMovie?.GetType().GetProperty("trailerUrl");
-            if (trailerProperty != null)
-            {
-                var url = trailerProperty.GetValue(_currentMovie) as string;
-                if (!string.IsNullOrEmpty(url))
-                    trailerUrl = url;
-            }
-
-            TrailerWebView.Source = new UrlWebViewSource { Url = trailerUrl };
-            TrailerWebView.IsVisible = true;
-            PlayButton.IsVisible = false;
+            await DisplayAlert("Play Movie", "Trailer playback feature coming soon!", "OK");
         }
 
         private async void Back_Clicked(object sender, EventArgs e)
@@ -295,34 +290,32 @@ namespace MovieApp
         #region Cast Members
         private async Task LoadCastMembers()
         {
-            // Check if Movie has a cast property
-            var castProperty = _currentMovie?.GetType().GetProperty("cast");
-            if (castProperty == null)
+            try
             {
-                // Hide cast section if property doesn't exist
-                CastSection.IsVisible = false;
-                return;
+                // Mock cast data - replace with actual API call
+                var castMembers = new List<CastMember>
+                {
+                    new CastMember { Name = "Actor 1", Character = "Role 1", ImageUrl = "" },
+                    new CastMember { Name = "Actor 2", Character = "Role 2", ImageUrl = "" },
+                    new CastMember { Name = "Actor 3", Character = "Role 3", ImageUrl = "" }
+                };
+
+                CastContainer.Children.Clear();
+                foreach (var cast in castMembers)
+                {
+                    CastContainer.Children.Add(CreateCastMemberView(cast));
+                }
+
+                CastSection.IsVisible = castMembers.Count > 0;
             }
-
-            var castList = castProperty.GetValue(_currentMovie) as List<CastMember>;
-
-            if (castList == null || castList.Count == 0)
+            catch (Exception ex)
             {
-                // Hide cast section if no cast data
+                System.Diagnostics.Debug.WriteLine($"Error loading cast: {ex.Message}");
                 CastSection.IsVisible = false;
-                return;
-            }
-
-            CastContainer.Children.Clear();
-
-            foreach (var castMember in castList.Take(10)) // Limit to 10 cast members
-            {
-                var castCard = CreateCastCard(castMember);
-                CastContainer.Children.Add(castCard);
             }
         }
 
-        private VerticalStackLayout CreateCastCard(CastMember cast)
+        private View CreateCastMemberView(CastMember cast)
         {
             var container = new VerticalStackLayout
             {
@@ -330,58 +323,72 @@ namespace MovieApp
                 WidthRequest = 100
             };
 
+            // Cast member image
             var imageBorder = new Border
             {
-                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 50 },
-                Stroke = Color.FromArgb("#333"),
-                StrokeThickness = 2,
-                WidthRequest = 100,
-                HeightRequest = 100,
-                HorizontalOptions = LayoutOptions.Center,
-                BackgroundColor = Color.FromArgb("#222")
+                StrokeShape = new RoundRectangle { CornerRadius = 50 },
+                WidthRequest = 80,
+                HeightRequest = 80,
+                BackgroundColor = Color.FromArgb("#1a1a1a"),
+                HorizontalOptions = LayoutOptions.Center
             };
 
             var image = new Image
             {
-                Aspect = Aspect.AspectFill
+                Aspect = Aspect.AspectFill,
+                WidthRequest = 80,
+                HeightRequest = 80
             };
 
-            // Handle cast image URL
             if (!string.IsNullOrEmpty(cast.ImageUrl))
             {
-                if (cast.ImageUrl.StartsWith("http://") || cast.ImageUrl.StartsWith("https://"))
+                string profileUrl = TMDBImageHelper.GetProfileUrl(cast.ImageUrl);
+                if (!string.IsNullOrEmpty(profileUrl))
                 {
                     image.Source = new UriImageSource
                     {
-                        Uri = new Uri(cast.ImageUrl),
+                        Uri = new Uri(profileUrl),
                         CachingEnabled = true,
-                        CacheValidity = TimeSpan.FromDays(1)
+                        CacheValidity = TimeSpan.FromDays(7)
                     };
                 }
                 else
                 {
-                    image.Source = cast.ImageUrl;
+                    image.Source = "placeholder_person.png";
                 }
             }
             else
             {
-                image.Source = "placeholder_avatar.png";
+                image.Source = "placeholder_person.png";
             }
 
             imageBorder.Content = image;
             container.Children.Add(imageBorder);
 
-            var nameLabel = new Label
+            // Name
+            container.Children.Add(new Label
             {
-                Text = cast.Name ?? "Unknown",
+                Text = cast.Name,
                 FontSize = 12,
+                FontAttributes = FontAttributes.Bold,
                 TextColor = Colors.White,
+                HorizontalOptions = LayoutOptions.Center,
                 HorizontalTextAlignment = TextAlignment.Center,
-                LineBreakMode = LineBreakMode.TailTruncation,
-                MaxLines = 2
-            };
+                MaxLines = 1,
+                LineBreakMode = LineBreakMode.TailTruncation
+            });
 
-            container.Children.Add(nameLabel);
+            // Character
+            container.Children.Add(new Label
+            {
+                Text = cast.Character,
+                FontSize = 10,
+                TextColor = Color.FromArgb("#999"),
+                HorizontalOptions = LayoutOptions.Center,
+                HorizontalTextAlignment = TextAlignment.Center,
+                MaxLines = 1,
+                LineBreakMode = LineBreakMode.TailTruncation
+            });
 
             return container;
         }
@@ -432,6 +439,15 @@ namespace MovieApp
                     {
                         SimilarMoviesSection.IsVisible = false;
                         return;
+                    }
+
+                    // Convert poster paths to full URLs using TMDBImageHelper
+                    foreach (var movie in _allSimilarMovies)
+                    {
+                        if (!string.IsNullOrEmpty(movie.Poster))
+                        {
+                            movie.Poster = TMDBImageHelper.GetSmartPosterUrl(movie.Poster, TMDBImageHelper.PosterSize.Small);
+                        }
                     }
 
                     // Filter similar movies by matching genres
@@ -523,9 +539,13 @@ namespace MovieApp
                 Preferences.Clear();
                 SecureStorage.RemoveAll();
 
+                // Reset theme to default
+                _themeManager.ResetToDefault();
+
                 await DisplayAlert("Success", "Cache cleared successfully.", "OK");
 
-                Application.Current.MainPage = new NavigationPage(new SplashPage());
+                Application.Current?.CloseWindow(Application.Current.Windows[0]);
+                Application.Current?.OpenWindow(new Window(new NavigationPage(new SplashPage())));
             }
             catch (Exception ex)
             {
@@ -545,11 +565,12 @@ namespace MovieApp
             try
             {
                 Preferences.Remove("username");
-                Preferences.Remove("IsDarkTheme");
+                SecureStorage.RemoveAll();
 
                 await DisplayAlert("Signed Out", "You have been signed out.", "OK");
 
-                Application.Current.MainPage = new NavigationPage(new SplashPage());
+                Application.Current?.CloseWindow(Application.Current.Windows[0]);
+                Application.Current?.OpenWindow(new Window(new NavigationPage(new SplashPage())));
             }
             catch (Exception ex)
             {
