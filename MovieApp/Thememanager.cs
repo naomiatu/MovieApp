@@ -58,6 +58,9 @@ namespace MovieApp
             ? Colors.White
             : Colors.Black;
 
+        public Color ButtonColor => IsDarkTheme
+            ? Colors.White
+            : Colors.Black;
         public Color SubtextColor => IsDarkTheme
             ? Color.FromArgb("#999999")
             : Color.FromArgb("#666666");

@@ -1,7 +1,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MovieApp.MovieDetailsPage"
-             BackgroundColor="#0F0F0F">
+             BackgroundColor="{Binding BackgroundColor}">
 
     <ScrollView>
         <VerticalStackLayout Spacing="0">
@@ -10,14 +10,14 @@
                 <Button Grid.Column="0"
                         Text="←"
                         FontSize="28"
-                        TextColor="White"
+                        TextColor="{Binding TextColor}"
                         BackgroundColor="Transparent"
                         Clicked="Back_Clicked"/>
                 <Label Grid.Column="1"
                        Text="Movie Details"
                        FontSize="18"
                        FontAttributes="Bold"
-                       TextColor="White"
+                       TextColor="{Binding TextColor}"
                        HorizontalOptions="Center"
                        VerticalOptions="Center"/>
             </Grid>
@@ -46,10 +46,10 @@
                 <Label x:Name="MovieTitle" 
                        FontSize="28" 
                        FontAttributes="Bold" 
-                       TextColor="White"/>
+                       TextColor="{Binding TextColor}"/>
                 <Label x:Name="MovieGenres" 
                        FontSize="14" 
-                       TextColor="#999"/>
+                       TextColor="{Binding SubtextColor}"/>
             </VerticalStackLayout>
 
             <HorizontalStackLayout Padding="20,20" Spacing="15">
@@ -68,26 +68,26 @@
             </HorizontalStackLayout>
 
             <VerticalStackLayout Padding="20,10" Spacing="10">
-                <Label Text="Storyline" FontSize="20" FontAttributes="Bold" TextColor="White"/>
-                <Label x:Name="MovieDescription" FontSize="16" TextColor="#CCC" LineHeight="1.4"/>
+                <Label Text="Storyline" FontSize="20" FontAttributes="Bold" TextColor="{Binding TextColor}"/>
+                <Label x:Name="MovieDescription" FontSize="16" TextColor="{Binding SubtextColor}" LineHeight="1.4"/>
             </VerticalStackLayout>
 
             <VerticalStackLayout Padding="20,10" Spacing="15">
-                <Label Text="Your Rating" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+                <Label Text="Your Rating" FontSize="20" FontAttributes="Bold" TextColor="{Binding TextColor}"/>
                 <HorizontalStackLayout Spacing="10">
                     <Button x:Name="Star1" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
                     <Button x:Name="Star2" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
                     <Button x:Name="Star3" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
                     <Button x:Name="Star4" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
                     <Button x:Name="Star5" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
-                    <Label x:Name="RatingText" VerticalOptions="Center" Margin="10,0" TextColor="#999"/>
+                    <Label x:Name="RatingText" VerticalOptions="Center" Margin="10,0" TextColor="{Binding SubtextColor}"/>
                 </HorizontalStackLayout>
             </VerticalStackLayout>
 
             <VerticalStackLayout Padding="20,10" Spacing="15">
-                <Label Text="How did it feel?" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+                <Label Text="How did it feel?" FontSize="20" FontAttributes="Bold" TextColor="{Binding TextColor}"/>
                 <FlexLayout Wrap="Wrap" JustifyContent="Start">
-                    <Button x:Name="Emoji1" Text="😍" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
+                    <Button x:Name="Emoji1" Text="😍" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50" BackgroundColor="White" TextColor="White"/>
                     <Button x:Name="Emoji2" Text="😴" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
                     <Button x:Name="Emoji3" Text="😱" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
                     <Button x:Name="Emoji4" Text="😂" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
@@ -98,7 +98,7 @@
 
             <!-- Similar Movies Section -->
             <VerticalStackLayout x:Name="SimilarMoviesSection" Spacing="15" Padding="20,10" IsVisible="False">
-                <Label Text="You May Also Like" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+                <Label Text="You May Also Like" FontSize="20" FontAttributes="Bold" TextColor="{Binding TextColor}"/>
                 <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
                     <HorizontalStackLayout x:Name="SimilarMoviesList" Spacing="15"/>
                 </ScrollView>
