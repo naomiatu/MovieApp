@@ -11,9 +11,59 @@ namespace MovieApp
     public static class MovieAutomation
     {
         private static List<Movie> _movies;
-        private static readonly HttpClient _httpClient = new HttpClient();
-        private const string TMDB_API_KEY = "fbcdb95be1bd9b050b61dfd15153ce85"; 
+
+        // MEMORY FIX: Configure HttpClient with timeouts and limits
+        private static readonly HttpClient _httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(30),
+            MaxResponseContentBufferSize = 5 * 1024 * 1024 // 5 MB max response
+        };
+
+        private const string TMDB_API_KEY = "fbcdb95be1bd9b050b61dfd15153ce85";
         private const string TMDB_BASE_URL = "https://api.themoviedb.org/3";
+
+        static MovieAutomation()
+        {
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+        }
+
+        // MEMORY FIX: Simple memory check
+        private static bool IsMemoryLow()
+        {
+            try
+            {
+                var memoryInfo = GC.GetGCMemoryInfo();
+                var availableMemory = memoryInfo.TotalAvailableMemoryBytes - memoryInfo.HeapSizeBytes;
+                const long LOW_MEMORY_THRESHOLD = 100 * 1024 * 1024; // 100 MB
+
+                bool isLow = availableMemory < LOW_MEMORY_THRESHOLD;
+
+                if (isLow)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Low memory warning: {availableMemory / 1024 / 1024} MB available");
+                }
+
+                return isLow;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // MEMORY FIX: Add method to clear cached movies
+        public static void ClearCache()
+        {
+            _movies?.Clear();
+            _movies = null;
+
+            // Force garbage collection
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            System.Diagnostics.Debug.WriteLine("🧹 Cleared movie cache");
+        }
 
         // =====================
         // TMDB RESPONSE MODELS
@@ -139,9 +189,16 @@ namespace MovieApp
         // PUBLIC API METHODS
         // =====================
 
-   
+
         public static async Task<List<Movie>> GetAllMoviesAsync()
         {
+            // MEMORY FIX: Check memory before loading
+            if (IsMemoryLow() && _movies != null)
+            {
+                System.Diagnostics.Debug.WriteLine("⚠️ Low memory detected, using cached data");
+                return _movies;
+            }
+
             if (_movies != null)
                 return _movies;
 
@@ -162,6 +219,7 @@ namespace MovieApp
                     .ToList();
 
                 System.Diagnostics.Debug.WriteLine($"✅ Loaded {_movies?.Count ?? 0} movies from TMDB API");
+                System.Diagnostics.Debug.WriteLine($"💾 Memory: {GC.GetTotalMemory(false) / 1024 / 1024} MB");
 
                 if (_movies != null && _movies.Count > 0)
                 {
@@ -232,10 +290,9 @@ namespace MovieApp
         public static async Task<List<Movie>> GetMoviesByGenreAsync(string genre)
         {
             var movies = await GetAllMoviesAsync();
-            if (string.IsNullOrWhiteSpace(genre))
-                return movies;
-
-            return movies.Where(m => m.genre?.Contains(genre) ?? false).ToList();
+            return movies.Where(m =>
+                m.genre?.Any(g => g.Equals(genre, StringComparison.OrdinalIgnoreCase)) ?? false
+            ).ToList();
         }
 
         public static async Task<List<Movie>> GetTopRatedMoviesAsync(int count = 10)
@@ -255,91 +312,59 @@ namespace MovieApp
                 .ToList();
         }
 
-        public static async Task<List<Movie>> GetMoviesByYearAsync(int year)
-        {
-            var movies = await GetAllMoviesAsync();
-            return movies.Where(m => m.year == year).ToList();
-        }
-
-        public static async Task<List<Movie>> GetMoviesByDirectorAsync(string director)
-        {
-            var movies = await GetAllMoviesAsync();
-            return movies.Where(m =>
-                m.director?.Equals(director, StringComparison.OrdinalIgnoreCase) ?? false
-            ).ToList();
-        }
-
-        public static void ClearCache()
-        {
-            _movies = null;
-        }
-
-
-        public static async Task<List<Movie>> GetSimilarMoviesAsync(string movieTitle, int count = 10)
+        public static async Task<List<Movie>> GetRecommendationsAsync(string movieTitle, int count = 10)
         {
             try
             {
-                // First, search for the movie to get its TMDB ID
-                var searchUrl = $"{TMDB_BASE_URL}/search/movie?api_key={TMDB_API_KEY}&query={Uri.EscapeDataString(movieTitle)}";
-                var searchResponse = await _httpClient.GetStringAsync(searchUrl);
-
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var searchResult = JsonSerializer.Deserialize<TMDBMovieResponse>(searchResponse, options);
-
-                if (searchResult?.Results == null || searchResult.Results.Count == 0)
-                {
-                    System.Diagnostics.Debug.WriteLine($"❌ Could not find movie: {movieTitle}");
+                var currentMovie = await GetMovieByNameAsync(movieTitle);
+                if (currentMovie == null)
                     return new List<Movie>();
-                }
 
-                var movieId = searchResult.Results[0].Id;
+                // Try TMDB API first
+                var allMovies = await GetAllMoviesAsync();
+                var tmdbMovie = allMovies.FirstOrDefault(m =>
+                    m.title.Equals(movieTitle, StringComparison.OrdinalIgnoreCase));
 
-                // Now fetch similar movies from TMDB
-                var similarUrl = $"{TMDB_BASE_URL}/movie/{movieId}/similar?api_key={TMDB_API_KEY}";
-                var similarResponse = await _httpClient.GetStringAsync(similarUrl);
-                var similarResult = JsonSerializer.Deserialize<TMDBMovieResponse>(similarResponse, options);
-
-                if (similarResult?.Results != null)
+                if (tmdbMovie != null)
                 {
-                    var similarMovies = similarResult.Results
+                    // Get genre-based recommendations
+                    var recommendations = allMovies
+                        .Where(m => m.title != movieTitle &&
+                                   m.genre != null &&
+                                   currentMovie.genre != null &&
+                                   m.genre.Any(g => currentMovie.genre.Contains(g)))
+                        .OrderByDescending(m => m.genre.Count(g => currentMovie.genre.Contains(g)))
+                        .ThenByDescending(m => m.rating)
                         .Take(count)
-                        .Select(ConvertToMovie)
                         .ToList();
 
-                    System.Diagnostics.Debug.WriteLine($"✅ Found {similarMovies.Count} similar movies for '{movieTitle}'");
-                    return similarMovies;
+                    return recommendations;
                 }
 
                 return new List<Movie>();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ Error fetching similar movies: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"❌ Error getting recommendations: {ex.Message}");
                 return new List<Movie>();
             }
         }
 
-   
-        public static async Task<List<Movie>> GetRecommendedMoviesAsync(string movieTitle, int count = 10)
+        // =====================
+        // PRIVATE API METHODS
+        // =====================
+
+        private static async Task<List<Movie>> GetRecommendationsFromTMDB(int movieId, int count = 10)
         {
             try
             {
-                // First, search for the movie to get its TMDB ID
-                var searchUrl = $"{TMDB_BASE_URL}/search/movie?api_key={TMDB_API_KEY}&query={Uri.EscapeDataString(movieTitle)}";
-                var searchResponse = await _httpClient.GetStringAsync(searchUrl);
-
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var searchResult = JsonSerializer.Deserialize<TMDBMovieResponse>(searchResponse, options);
-
-                if (searchResult?.Results == null || searchResult.Results.Count == 0)
-                {
-                    return new List<Movie>();
-                }
-
-                var movieId = searchResult.Results[0].Id;
-
-                // Fetch recommendations from TMDB
                 var recUrl = $"{TMDB_BASE_URL}/movie/{movieId}/recommendations?api_key={TMDB_API_KEY}";
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
                 var recResponse = await _httpClient.GetStringAsync(recUrl);
                 var recResult = JsonSerializer.Deserialize<TMDBMovieResponse>(recResponse, options);
 

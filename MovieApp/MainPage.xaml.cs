@@ -15,6 +15,11 @@ namespace MovieApp
         private int _reviewCount;
         private readonly ThemeManager _themeManager;
 
+         Cache review data to avoid expensive SecureStorage reads every time
+        private static Dictionary<string, MovieReview> _cachedReviews = new Dictionary<string, MovieReview>();
+        private static DateTime _lastReviewCacheUpdate = DateTime.MinValue;
+        private const int REVIEW_CACHE_MINUTES = 5;
+
         public MainPage()
         {
             InitializeComponent();
@@ -32,6 +37,8 @@ namespace MovieApp
             string userName = Preferences.Default.Get("username", "Guest");
             WelcomeLabel.Text = $"Hello, {userName}!";
 
+            System.Diagnostics.Debug.WriteLine($"💾 MainPage appearing - Memory: {GC.GetTotalMemory(false) / 1024 / 1024} MB");
+
             // Load all data
             await LoadDashboardData();
         }
@@ -42,14 +49,17 @@ namespace MovieApp
             {
                 LoadingOverlay.IsVisible = true;
 
-                // Load movies
-                _allMovies = await MovieAutomation.GetAllMoviesAsync();
+                //  Use centralized data service 
+                var dataService = MovieDataService.Instance;
+                _allMovies = await dataService.GetMoviesAsync();
+
+                System.Diagnostics.Debug.WriteLine($"✅ MainPage using {_allMovies?.Count ?? 0} cached movies");
 
                 // Load watched movies
                 await LoadWatchedMovies();
 
-                // Count reviews
-                await CountReviews();
+                // Count reviews with caching
+                await CountReviewsOptimized();
 
                 // Update stats
                 UpdateStats();
@@ -57,13 +67,14 @@ namespace MovieApp
                 // Load top rated movies
                 await LoadTopRatedMovies();
 
-                // Load recent reviews
+                // Load recent reviews (uses cached reviews)
                 await LoadRecentReviews();
+
+                System.Diagnostics.Debug.WriteLine($"💾 MainPage loaded - Memory: {GC.GetTotalMemory(false) / 1024 / 1024} MB");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading dashboard: {ex.Message}");
-                // Continue even if there's an error - show empty dashboard
                 UpdateStats();
             }
             finally
@@ -89,24 +100,55 @@ namespace MovieApp
             }
         }
 
-        private async Task CountReviews()
+        private async Task CountReviewsOptimized()
         {
+            // Check if cache is still valid
+            if ((DateTime.Now - _lastReviewCacheUpdate).TotalMinutes < REVIEW_CACHE_MINUTES)
+            {
+                _reviewCount = _cachedReviews.Count;
+                System.Diagnostics.Debug.WriteLine($"✅ Using cached review count: {_reviewCount}");
+                return;
+            }
+
+            // Need to refresh cache
             _reviewCount = 0;
+            _cachedReviews.Clear();
 
             if (_allMovies == null) return;
 
-            foreach (var movie in _allMovies)
+            System.Diagnostics.Debug.WriteLine($"🔄 Refreshing review cache for {_allMovies.Count} movies...");
+
+            // Only check movies that are likely to have reviews (watched movies)
+            var moviesToCheck = _watchedMovies != null && _watchedMovies.Count > 0
+                ? _allMovies.Where(m => _watchedMovies.Contains(m.title)).ToList()
+                : _allMovies.Take(50).ToList();
+
+            foreach (var movie in moviesToCheck)
             {
                 try
                 {
                     var json = await SecureStorage.GetAsync($"review_{movie.title}");
                     if (!string.IsNullOrEmpty(json))
                     {
-                        _reviewCount++;
+                        var review = JsonSerializer.Deserialize<MovieReview>(json);
+                        if (review != null && review.Rating > 0)
+                        {
+                            _cachedReviews[movie.title] = review;
+                            _reviewCount++;
+                        }
                     }
                 }
                 catch { }
             }
+
+            _lastReviewCacheUpdate = DateTime.Now;
+            System.Diagnostics.Debug.WriteLine($"✅ Review cache updated: {_reviewCount} reviews found");
+        }
+
+        public static void InvalidateReviewCache()
+        {
+            _lastReviewCacheUpdate = DateTime.MinValue;
+            System.Diagnostics.Debug.WriteLine("🔄 Review cache invalidated");
         }
 
         #endregion
@@ -124,7 +166,7 @@ namespace MovieApp
             // Reviews count
             ReviewsCountLabel.Text = _reviewCount.ToString();
 
-            // Average rating of collection
+            // Average rating
             if (_allMovies != null && _allMovies.Count > 0)
             {
                 var avgRating = _allMovies.Average(m => m.rating);
@@ -193,27 +235,19 @@ namespace MovieApp
                 HeightRequest = 180
             };
 
-            // Use TMDBImageHelper to get proper poster URL
+            // MEMORY FIX: Use Thumbnail size for list items
             if (!string.IsNullOrEmpty(movie.poster))
             {
-                string posterUrl = TMDBImageHelper.GetSmartPosterUrl(movie.poster, TMDBImageHelper.PosterSize.Small);
+                string posterUrl = TMDBImageHelper.GetThumbnailUrl(movie.poster);
 
                 if (!string.IsNullOrEmpty(posterUrl))
                 {
-                    if (posterUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                        posterUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    posterImage.Source = new UriImageSource
                     {
-                        posterImage.Source = new UriImageSource
-                        {
-                            Uri = new Uri(posterUrl),
-                            CachingEnabled = true,
-                            CacheValidity = TimeSpan.FromDays(7) // Cache for longer
-                        };
-                    }
-                    else
-                    {
-                        posterImage.Source = posterUrl;
-                    }
+                        Uri = new Uri(posterUrl),
+                        CachingEnabled = true,
+                        CacheValidity = TimeSpan.FromDays(7)
+                    };
                 }
                 else
                 {
@@ -227,7 +261,7 @@ namespace MovieApp
 
             posterBorder.Content = posterImage;
 
-            // Rating badge overlay
+            // Rating badge
             var ratingBadge = new Border
             {
                 BackgroundColor = _themeManager.AccentColor,
@@ -251,32 +285,26 @@ namespace MovieApp
 
             grid.Add(posterContainer, 0, 0);
 
-            // Movie info
-            var infoStack = new VerticalStackLayout
+            // Title
+            var titleStack = new VerticalStackLayout
             {
+                Spacing = 4,
                 Padding = new Thickness(8, 0),
-                Spacing = 4
+                VerticalOptions = LayoutOptions.Center
             };
 
-            infoStack.Children.Add(new Label
+            titleStack.Children.Add(new Label
             {
                 Text = movie.title,
-                FontSize = 12,
+                FontSize = 13,
                 FontAttributes = FontAttributes.Bold,
                 TextColor = _themeManager.TextColor,
                 MaxLines = 2,
-                LineBreakMode = LineBreakMode.TailTruncation
+                LineBreakMode = LineBreakMode.TailTruncation,
+                HorizontalTextAlignment = TextAlignment.Center
             });
 
-            infoStack.Children.Add(new Label
-            {
-                Text = movie.year.ToString(),
-                FontSize = 10,
-                TextColor = _themeManager.SubtextColor
-            });
-
-            grid.Add(infoStack, 0, 1);
-
+            grid.Add(titleStack, 0, 1);
             border.Content = grid;
 
             // Tap gesture
@@ -295,33 +323,13 @@ namespace MovieApp
         {
             RecentReviewsContainer.Children.Clear();
 
-            if (_allMovies == null)
+            if (_allMovies == null || _allMovies.Count == 0)
             {
                 NoReviewsLabel.IsVisible = true;
                 return;
             }
 
-            var reviewedMovies = new List<(Movie movie, MovieReview review)>();
-
-            // Load all reviews
-            foreach (var movie in _allMovies)
-            {
-                try
-                {
-                    var json = await SecureStorage.GetAsync($"review_{movie.title}");
-                    if (!string.IsNullOrEmpty(json))
-                    {
-                        var review = JsonSerializer.Deserialize<MovieReview>(json);
-                        if (review != null && review.Rating > 0)
-                        {
-                            reviewedMovies.Add((movie, review));
-                        }
-                    }
-                }
-                catch { }
-            }
-
-            if (reviewedMovies.Count == 0)
+            if (_cachedReviews.Count == 0)
             {
                 NoReviewsLabel.IsVisible = true;
                 return;
@@ -329,13 +337,18 @@ namespace MovieApp
 
             NoReviewsLabel.IsVisible = false;
 
-            // Sort by date (most recent first)
-            var sortedReviews = reviewedMovies
-                .OrderByDescending(r => r.review.DateReviewed ?? DateTime.MinValue)
+            var reviewedMovies = _cachedReviews
+                .Select(kvp =>
+                {
+                    var movie = _allMovies.FirstOrDefault(m => m.title == kvp.Key);
+                    return movie != null ? (movie, kvp.Value) : default;
+                })
+                .Where(x => x != default)
+                .OrderByDescending(x => x.Value.DateReviewed ?? DateTime.MinValue)
                 .Take(5)
                 .ToList();
 
-            foreach (var (movie, review) in sortedReviews)
+            foreach (var (movie, review) in reviewedMovies)
             {
                 RecentReviewsContainer.Children.Add(CreateReviewCard(movie, review));
             }
@@ -374,27 +387,19 @@ namespace MovieApp
                 Aspect = Aspect.AspectFill
             };
 
-            // Use TMDBImageHelper to get proper poster URL
+            // MEMORY FIX: Use Thumbnail size
             if (!string.IsNullOrEmpty(movie.poster))
             {
-                string posterUrl = TMDBImageHelper.GetSmartPosterUrl(movie.poster, TMDBImageHelper.PosterSize.Small);
+                string posterUrl = TMDBImageHelper.GetThumbnailUrl(movie.poster);
 
                 if (!string.IsNullOrEmpty(posterUrl))
                 {
-                    if (posterUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                        posterUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    posterImage.Source = new UriImageSource
                     {
-                        posterImage.Source = new UriImageSource
-                        {
-                            Uri = new Uri(posterUrl),
-                            CachingEnabled = true,
-                            CacheValidity = TimeSpan.FromDays(7)
-                        };
-                    }
-                    else
-                    {
-                        posterImage.Source = posterUrl;
-                    }
+                        Uri = new Uri(posterUrl),
+                        CachingEnabled = true,
+                        CacheValidity = TimeSpan.FromDays(7)
+                    };
                 }
                 else
                 {
@@ -407,7 +412,6 @@ namespace MovieApp
             }
 
             posterBorder.Content = posterImage;
-
             grid.Add(posterBorder, 0, 0);
 
             // Review info
@@ -427,7 +431,7 @@ namespace MovieApp
                 LineBreakMode = LineBreakMode.TailTruncation
             });
 
-            // Star rating display
+            // Stars
             var starsLabel = new Label
             {
                 FontSize = 16,
@@ -441,7 +445,7 @@ namespace MovieApp
             starsLabel.Text = stars;
             infoStack.Children.Add(starsLabel);
 
-            // Emojis if any
+            // Emojis
             if (review.SelectedEmojis != null && review.SelectedEmojis.Count > 0)
             {
                 infoStack.Children.Add(new Label
@@ -463,7 +467,6 @@ namespace MovieApp
             }
 
             grid.Add(infoStack, 1, 0);
-
             border.Content = grid;
 
             // Tap gesture
@@ -494,11 +497,7 @@ namespace MovieApp
         {
             try
             {
-                // Navigate to Search page (assuming it's in a tab)
-                if (Application.Current?.MainPage is Shell shell)
-                {
-                    await shell.GoToAsync("//Search");
-                }
+                await Shell.Current.GoToAsync("//SearchPage");
             }
             catch (Exception ex)
             {
@@ -506,21 +505,19 @@ namespace MovieApp
             }
         }
 
+
         private async void BrowseMovies_Clicked(object sender, EventArgs e)
         {
             try
             {
-                // Navigate to Search page
-                if (Application.Current?.MainPage is Shell shell)
-                {
-                    await shell.GoToAsync("//Search");
-                }
+                await Shell.Current.GoToAsync("//SearchPage");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
             }
         }
+
 
         private async void RandomMovie_Clicked(object sender, EventArgs e)
         {
@@ -532,7 +529,6 @@ namespace MovieApp
                     return;
                 }
 
-                // Pick a random movie
                 var random = new Random();
                 var randomMovie = _allMovies[random.Next(_allMovies.Count)];
 
@@ -545,6 +541,24 @@ namespace MovieApp
             }
         }
 
+        public static void UpdateCacheReview(string movieTitle, MovieReview review)
+        {
+            _cachedReviews[movieTitle] = review;
+            _lastReviewCacheUpdate = DateTime.Now;
+            System.Diagnostics.Debug.WriteLine($"Review cache updated for: {movieTitle}");
+        }
+
         #endregion
+
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+
+            // Clear container children to free memory
+            TopRatedContainer?.Children.Clear();
+            RecentReviewsContainer?.Children.Clear();
+
+            System.Diagnostics.Debug.WriteLine("🧹 MainPage cleaned up");
+        }
     }
 }
