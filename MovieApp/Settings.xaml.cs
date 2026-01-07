@@ -34,28 +34,11 @@ namespace MovieApp
             await Shell.Current.GoToAsync("..");
         }
 
-        private async void LeaveFeedback_Tapped(object sender, EventArgs e)
-        {
-            bool result = await DisplayAlert(
-                "Leave Feedback",
-                "Would you like to send feedback to the developers?",
-                "Yes",
-                "Cancel");
-
-            if (result)
-            {
-                await DisplayAlert(
-                    "Thank You!",
-                    "Your feedback helps us improve the app.",
-                    "OK");
-            }
-        }
-
         private async void ClearCache_Tapped(object sender, EventArgs e)
         {
             bool confirm = await DisplayAlert(
                 "Clear Cache",
-                "This will reset all app settings and preferences. Continue?",
+                "This will reset all your reviews, watched movies, and preferences. Continue?",
                 "Yes",
                 "No");
 
@@ -73,14 +56,21 @@ namespace MovieApp
                 // Reset theme to default
                 _themeManager.ResetToDefault();
 
+                // Clear static caches if they exist
+                try
+                {
+                    // Clear MainPage review cache
+                    MainPage.InvalidateReviewCache();
+                }
+                catch { }
+
                 await DisplayAlert(
                     "Success",
-                    "Cache cleared successfully. Please restart the app.",
+                    "Cache cleared successfully!",
                     "OK");
 
-                // Restart the app
-                Application.Current?.CloseWindow(Application.Current.Windows[0]);
-                Application.Current?.OpenWindow(new Window(new NavigationPage(new SplashPage())));
+                // Navigate back to main page smoothly without closing/reopening windows
+                Application.Current.MainPage = new AppShell();
             }
             catch (Exception ex)
             {
@@ -104,18 +94,26 @@ namespace MovieApp
 
             try
             {
-                // Clear user-specific data but keep theme preference
+                // Clear username
                 Preferences.Remove("username");
+
+                // Clear secure storage (reviews, watched movies, etc.)
                 SecureStorage.RemoveAll();
+
+                // Clear static caches
+                try
+                {
+                    MainPage.InvalidateReviewCache();
+                }
+                catch { }
 
                 await DisplayAlert(
                     "Signed Out",
                     "You have been signed out successfully.",
                     "OK");
 
-                // Return to splash/login page
-                Application.Current?.CloseWindow(Application.Current.Windows[0]);
-                Application.Current?.OpenWindow(new Window(new NavigationPage(new SplashPage())));
+                // Navigate to splash page
+                Application.Current.MainPage = new NavigationPage(new SplashPage());
             }
             catch (Exception ex)
             {

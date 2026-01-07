@@ -34,43 +34,6 @@
                    Margin="20,10,20,10"
                    FontAttributes="Bold"/>
 
-            <!-- Leave Feedback Card -->
-            <Border BackgroundColor="{Binding CardBackgroundColor}"
-                    Padding="15"
-                    Margin="20,5,20,5"
-                    StrokeShape="RoundRectangle 40,40,40,40">
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="LeaveFeedback_Tapped"/>
-                </Border.GestureRecognizers>
-
-                <Grid ColumnDefinitions="40,*">
-                    <Border Grid.Column="0"
-                            WidthRequest="40"
-                            HeightRequest="40"
-                            StrokeShape="RoundRectangle"
-                            Padding="0"
-                            BackgroundColor="{Binding IconBackgroundColor}"
-                            VerticalOptions="Center">
-                        <Label Text="👍"
-                               FontSize="20"
-                               HorizontalOptions="Center"
-                               VerticalOptions="Center"/>
-                    </Border>
-
-                    <VerticalStackLayout Grid.Column="1" 
-                                        Spacing="2"
-                                        VerticalOptions="Center">
-                        <Label Text="Leave feedback"
-                               FontSize="16"
-                               TextColor="{Binding TextColor}"
-                               FontAttributes="Bold"/>
-                        <Label Text="Please leave your opions   "
-                               FontSize="12"
-                               TextColor="{Binding SubtextColor}"/>
-                    </VerticalStackLayout>
-                </Grid>
-            </Border>
-
             <!-- Switch Themes Card -->
             <Border BackgroundColor="{Binding CardBackgroundColor}"
                     Padding="15"

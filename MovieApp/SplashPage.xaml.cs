@@ -1,14 +1,14 @@
-using Microsoft.Maui.Controls;
+﻿using Microsoft.Maui.Controls;
 using MovieApp;
 using System;
-using System.ComponentModel.Design.Serialization;
-using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace MovieProject;
 
 public partial class SplashPage : ContentPage
 {
+    private bool _isAnimating = false;
+
     public SplashPage()
     {
         InitializeComponent();
@@ -17,7 +17,49 @@ public partial class SplashPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await AnimateIntro();
+
+        if (!_isAnimating)
+        {
+            _isAnimating = true;
+
+            // Start animations and movie loading in parallel
+            var animationTask = AnimateIntro();
+            var loadingTask = PreloadAllDataAsync();
+
+            await Task.WhenAll(animationTask, loadingTask);
+
+            _isAnimating = false;
+        }
+    }
+
+    private async Task PreloadAllDataAsync()
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine("🎬 Starting complete data preload...");
+            System.Diagnostics.Debug.WriteLine($"💾 Memory before load: {GC.GetTotalMemory(false) / 1024 / 1024} MB");
+
+            // Load all movies through centralized service (ONE TIME ONLY)
+            var dataService = MovieDataService.Instance;
+            var movies = await dataService.GetMoviesAsync();
+
+            System.Diagnostics.Debug.WriteLine($"✅ Preloaded {movies?.Count ?? 0} movies");
+            System.Diagnostics.Debug.WriteLine($"💾 Memory after load: {GC.GetTotalMemory(false) / 1024 / 1024} MB");
+
+            // Clear old image cache to prevent memory buildup
+            ImageCacheManager.ClearAllCache();
+
+            System.Diagnostics.Debug.WriteLine("✅ All data preloaded successfully");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"⚠️ Data preload failed (app will still work): {ex.Message}");
+
+            // Force cleanup on failure
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
     }
 
     private async Task AnimateIntro()
@@ -68,7 +110,11 @@ public partial class SplashPage : ContentPage
         var emojis = new[] { Emoji1, Emoji2, Emoji3, Emoji4, Emoji5 };
         var random = new Random();
 
-        while (true)
+        // Only animate for a limited time to avoid memory buildup
+        int iterations = 0;
+        const int MAX_ITERATIONS = 10;
+
+        while (iterations < MAX_ITERATIONS && ContentStack.Opacity > 0)
         {
             foreach (var emoji in emojis)
             {
@@ -76,15 +122,26 @@ public partial class SplashPage : ContentPage
                 _ = Task.Run(async () =>
                 {
                     await Task.Delay(delay);
-                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    try
                     {
-                        await emoji.TranslateTo(0, -10, 1000, Easing.SinInOut);
-                        await emoji.TranslateTo(0, 0, 1000, Easing.SinInOut);
-                    });
+                        await MainThread.InvokeOnMainThreadAsync(async () =>
+                        {
+                            if (emoji != null && emoji.IsLoaded)
+                            {
+                                await emoji.TranslateTo(0, -10, 1000, Easing.SinInOut);
+                                await emoji.TranslateTo(0, 0, 1000, Easing.SinInOut);
+                            }
+                        });
+                    }
+                    catch
+                    {
+                        // Ignore animation errors if page is disposed
+                    }
                 });
             }
 
             await Task.Delay(2000);
+            iterations++;
         }
     }
 
@@ -103,6 +160,11 @@ public partial class SplashPage : ContentPage
 
             // Show loading animation
             await AnimateExit();
+
+            // Log final memory state
+            var dataService = MovieDataService.Instance;
+            System.Diagnostics.Debug.WriteLine($"💾 Memory before navigation: {GC.GetTotalMemory(false) / 1024 / 1024} MB");
+            System.Diagnostics.Debug.WriteLine($"✅ {dataService.Count} movies ready for use");
 
             // Navigate to main app using .NET MAUI 9 pattern
             if (Application.Current != null && Application.Current.Windows.Count > 0)
@@ -132,10 +194,10 @@ public partial class SplashPage : ContentPage
         await LoadingDots.FadeTo(1, 200);
 
         // Animate loading dots
-        _ = AnimateLoadingDots();
+        await AnimateLoadingDots();
 
         // Wait a bit for effect
-        await Task.Delay(1000);
+        await Task.Delay(800);
 
         // Fade out everything
         await ContentStack.FadeTo(0, 400);
@@ -151,11 +213,21 @@ public partial class SplashPage : ContentPage
             {
                 _ = Task.Run(async () =>
                 {
-                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    try
                     {
-                        await dot.ScaleTo(1.3, 200);
-                        await dot.ScaleTo(1.0, 200);
-                    });
+                        await MainThread.InvokeOnMainThreadAsync(async () =>
+                        {
+                            if (dot != null && dot.IsLoaded)
+                            {
+                                await dot.ScaleTo(1.3, 200);
+                                await dot.ScaleTo(1.0, 200);
+                            }
+                        });
+                    }
+                    catch
+                    {
+                        // Ignore animation errors
+                    }
                 });
                 await Task.Delay(150);
             }
@@ -164,11 +236,28 @@ public partial class SplashPage : ContentPage
 
     private async Task ShakeView(View view)
     {
-        for (int i = 0; i < 3; i++)
+        try
         {
-            await view.TranslateTo(-10, 0, 50);
-            await view.TranslateTo(10, 0, 50);
+            for (int i = 0; i < 3; i++)
+            {
+                await view.TranslateTo(-10, 0, 50);
+                await view.TranslateTo(10, 0, 50);
+            }
+            await view.TranslateTo(0, 0, 50);
         }
-        await view.TranslateTo(0, 0, 50);
+        catch
+        {
+            // Ignore animation errors
+        }
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+
+        // Stop any ongoing animations
+        ContentStack?.CancelAnimations();
+
+        System.Diagnostics.Debug.WriteLine("🧹 SplashPage disposed");
     }
 }
