@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,13 +13,18 @@ namespace MovieApp
     public partial class Search : ContentPage
     {
         private List<Movie> _allMovies = new();
-        private List<Movie> _filteredMovies = new();
+        private ObservableCollection<Movie> _displayedMovies;
         private HashSet<string> _selectedGenres = new();
         private bool _isNavigating;
         private string _searchText = "";
         private readonly ThemeManager _themeManager;
-
         private CancellationTokenSource _searchDebounceToken;
+
+        // MEMORY FIX: Pagination to prevent loading all movies at once
+        private const int PAGE_SIZE = 20;
+        private int _currentPage = 0;
+        private bool _isLoadingMore = false;
+        private List<Movie> _filteredMovies = new();
 
         // Genre to Emoji mapping
         private static readonly Dictionary<string, string> GenreEmojis = new()
@@ -49,6 +55,9 @@ namespace MovieApp
         {
             InitializeComponent();
 
+            // Initialize ObservableCollection
+            _displayedMovies = new ObservableCollection<Movie>();
+
             // Get theme manager and bind
             _themeManager = ThemeManager.Instance;
             BindingContext = _themeManager;
@@ -58,15 +67,13 @@ namespace MovieApp
             {
                 if (e.PropertyName == nameof(_themeManager.IsDarkTheme))
                 {
-                    // Refresh genre chips with new theme
-                    if (_allMovies.Count > 0)
+                    MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        MainThread.BeginInvokeOnMainThread(() =>
+                        if (_allMovies.Count > 0)
                         {
                             SetupGenreFilters();
-                            DisplayMovies(_filteredMovies);
-                        });
-                    }
+                        }
+                    });
                 }
             };
         }
@@ -74,6 +81,8 @@ namespace MovieApp
         protected override async void OnAppearing()
         {
             base.OnAppearing();
+
+            System.Diagnostics.Debug.WriteLine($"💾 Search page appearing - Memory: {GC.GetTotalMemory(false) / 1024 / 1024} MB");
 
             if (_allMovies.Count == 0)
                 await LoadMoviesAsync();
@@ -85,11 +94,17 @@ namespace MovieApp
             {
                 ShowLoading(true);
 
-                _allMovies = await MovieAutomation.GetAllMoviesAsync();
-                _filteredMovies = new List<Movie>(_allMovies);
+                // MEMORY FIX: Use centralized data service - movies already loaded!
+                var dataService = MovieDataService.Instance;
+                _allMovies = await dataService.GetMoviesAsync();
+
+                System.Diagnostics.Debug.WriteLine($"✅ Search page using {_allMovies.Count} cached movies");
 
                 SetupGenreFilters();
-                DisplayMovies(_filteredMovies);
+                
+                // Initial filter and display
+                _filteredMovies = new List<Movie>(_allMovies);
+                LoadMoreMovies();
             }
             catch (Exception ex)
             {
@@ -148,11 +163,9 @@ namespace MovieApp
 
             GenreChipsContainer.Children.Add(CreateGenreChip("All", "🎬", true));
 
-            var genres = _allMovies
-                .Where(m => m.genre != null)
-                .SelectMany(m => m.genre)
-                .Distinct()
-                .OrderBy(g => g);
+            // MEMORY FIX: Use centralized service for genres
+            var dataService = MovieDataService.Instance;
+            var genres = dataService.GetAllGenres();
 
             foreach (var genre in genres)
             {
@@ -216,17 +229,6 @@ namespace MovieApp
 
             border.GestureRecognizers.Add(tap);
 
-            // Subscribe to theme changes
-            _themeManager.PropertyChanged += (s, e) =>
-            {
-                if (!selected)
-                {
-                    border.BackgroundColor = _themeManager.CardBackgroundColor;
-                    border.Stroke = _themeManager.BorderColor;
-                    textLabel.TextColor = _themeManager.TextColor;
-                }
-            };
-
             return border;
         }
 
@@ -256,7 +258,6 @@ namespace MovieApp
                     Opacity = 0.6f
                 };
 
-                // Update text color
                 var textLabel = content.Children.OfType<Label>().LastOrDefault();
                 if (textLabel != null)
                 {
@@ -269,10 +270,11 @@ namespace MovieApp
         }
 
         // =====================
-        // 🎬 FILTERING
+        // 🎬 FILTERING WITH PAGINATION
         // =====================
         private void ApplyFilters()
         {
+            // Filter the movies
             _filteredMovies = _allMovies.Where(movie =>
             {
                 bool matchesSearch =
@@ -286,7 +288,92 @@ namespace MovieApp
                 return matchesSearch && matchesGenre;
             }).ToList();
 
-            DisplayMovies(_filteredMovies);
+            // Reset pagination
+            _currentPage = 0;
+            _displayedMovies.Clear();
+            MoviesContainer.Children.Clear();
+
+            // Load first page
+            LoadMoreMovies();
+
+            System.Diagnostics.Debug.WriteLine($"🔍 Filtered: {_filteredMovies.Count} movies, displaying first {Math.Min(PAGE_SIZE, _filteredMovies.Count)}");
+        }
+
+        // MEMORY FIX: Load movies in batches instead of all at once
+        private void LoadMoreMovies()
+        {
+            if (_isLoadingMore)
+                return;
+
+            _isLoadingMore = true;
+
+            try
+            {
+                int startIndex = _currentPage * PAGE_SIZE;
+                int endIndex = Math.Min(startIndex + PAGE_SIZE, _filteredMovies.Count);
+
+                if (startIndex >= _filteredMovies.Count)
+                {
+                    // No more movies to load
+                    ShowNoResults(_filteredMovies.Count == 0);
+                    return;
+                }
+
+                ResultsScrollView.IsVisible = true;
+                NoResultsView.IsVisible = false;
+
+                // Add movies for this page
+                for (int i = startIndex; i < endIndex; i++)
+                {
+                    var movie = _filteredMovies[i];
+                    var card = CreateMovieCard(movie);
+                    
+                    // Initial animation state
+                    card.Opacity = 0;
+                    card.TranslationY = 20;
+                    
+                    MoviesContainer.Children.Add(card);
+                    
+                    // Animate in
+                    card.Dispatcher.Dispatch(async () =>
+                    {
+                        await Task.Delay(40);
+                        _ = card.FadeTo(1, 250, Easing.CubicOut);
+                        _ = card.TranslateTo(0, 0, 250, Easing.CubicOut);
+                    });
+                }
+
+                _currentPage++;
+
+                System.Diagnostics.Debug.WriteLine($"📄 Loaded page {_currentPage}: {endIndex - startIndex} movies (total displayed: {MoviesContainer.Children.Count})");
+            }
+            finally
+            {
+                _isLoadingMore = false;
+            }
+        }
+
+        private void ShowNoResults(bool show)
+        {
+            ResultsScrollView.IsVisible = !show;
+            NoResultsView.IsVisible = show;
+        }
+
+        private void ResultsScrollView_Scrolled(object sender, ScrolledEventArgs e)
+        {
+            // MEMORY FIX: Implement infinite scroll - load more when near bottom
+            var scrollView = sender as ScrollView;
+            if (scrollView == null)
+                return;
+
+            double scrollingSpace = scrollView.ContentSize.Height - scrollView.Height;
+            double scrollPosition = e.ScrollY;
+
+            // If scrolled to within 80% of the bottom, load more
+            if (scrollingSpace > 0 && scrollPosition / scrollingSpace > 0.8)
+            {
+                LoadMoreMovies();
+            }
         }
 
         private Border CreateMovieCard(Movie movie)
@@ -295,8 +382,8 @@ namespace MovieApp
             {
                 ColumnDefinitions = new ColumnDefinitionCollection
                 {
-                    new ColumnDefinition { Width = new GridLength(120) }, // Image width
-                    new ColumnDefinition { Width = GridLength.Star }      // Title width
+                    new ColumnDefinition { Width = new GridLength(120) },
+                    new ColumnDefinition { Width = GridLength.Star }
                 },
                 Padding = 10
             };
@@ -310,7 +397,6 @@ namespace MovieApp
                 VerticalOptions = LayoutOptions.Center
             };
 
-            // Bind poster border colors
             posterBorder.SetBinding(Border.StrokeProperty, new Binding(nameof(_themeManager.BorderColor), source: _themeManager));
             posterBorder.SetBinding(Border.BackgroundColorProperty, new Binding(nameof(_themeManager.CardBackgroundColor), source: _themeManager));
 
@@ -321,26 +407,19 @@ namespace MovieApp
                 VerticalOptions = LayoutOptions.Fill
             };
 
-            // Use TMDBImageHelper to get proper poster URL
+            // MEMORY FIX: Use small poster size for list items
             if (!string.IsNullOrEmpty(movie.poster))
             {
-                string posterUrl = TMDBImageHelper.GetSmartPosterUrl(movie.poster, TMDBImageHelper.PosterSize.Small);
+                string posterUrl = TMDBImageHelper.GetListPosterUrl(movie.poster);
 
                 if (!string.IsNullOrEmpty(posterUrl))
                 {
-                    if (posterUrl.StartsWith("http://") || posterUrl.StartsWith("https://"))
+                    posterImage.Source = new UriImageSource
                     {
-                        posterImage.Source = new UriImageSource
-                        {
-                            Uri = new Uri(posterUrl),
-                            CachingEnabled = true,
-                            CacheValidity = TimeSpan.FromDays(7)
-                        };
-                    }
-                    else
-                    {
-                        posterImage.Source = posterUrl;
-                    }
+                        Uri = new Uri(posterUrl),
+                        CachingEnabled = true,
+                        CacheValidity = TimeSpan.FromDays(7)
+                    };
                 }
                 else
                 {
@@ -349,7 +428,6 @@ namespace MovieApp
             }
             else
             {
-                // Fallback placeholder
                 posterImage.Source = "placeholder_movie.png";
             }
 
@@ -357,7 +435,7 @@ namespace MovieApp
             Grid.SetColumn(posterBorder, 0);
             grid.Children.Add(posterBorder);
 
-            // Movie Details (Title, Year, Rating)
+            // Movie Details
             var detailsStack = new VerticalStackLayout
             {
                 Spacing = 5,
@@ -434,7 +512,6 @@ namespace MovieApp
                 }
             };
 
-            // Bind border colors
             border.SetBinding(Border.StrokeProperty, new Binding(nameof(_themeManager.BorderColor), source: _themeManager));
             border.SetBinding(Border.BackgroundColorProperty, new Binding(nameof(_themeManager.CardBackgroundColor), source: _themeManager));
 
@@ -443,38 +520,6 @@ namespace MovieApp
             border.GestureRecognizers.Add(tapGesture);
 
             return border;
-        }
-
-        private async void DisplayMovies(List<Movie> movies)
-        {
-            MoviesContainer.Children.Clear();
-
-            if (movies == null || movies.Count == 0)
-            {
-                ResultsScrollView.IsVisible = false;
-                NoResultsView.IsVisible = true;
-                return;
-            }
-
-            ResultsScrollView.IsVisible = true;
-            NoResultsView.IsVisible = false;
-
-            foreach (var movie in movies)
-            {
-                var card = CreateMovieCard(movie);
-
-                // Initial animation state
-                card.Opacity = 0;
-                card.TranslationY = 20;
-
-                MoviesContainer.Children.Add(card);
-
-                // Staggered animation
-                await Task.Delay(40);
-
-                _ = card.FadeTo(1, 250, Easing.CubicOut);
-                _ = card.TranslateTo(0, 0, 250, Easing.CubicOut);
-            }
         }
 
         private async Task MovieCard_Tapped(Movie movie)
@@ -495,6 +540,19 @@ namespace MovieApp
             {
                 _isNavigating = false;
             }
+        }
+
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+
+            // MEMORY FIX: Clear displayed movies when leaving page
+            System.Diagnostics.Debug.WriteLine($"🧹 Search page cleanup - Clearing {MoviesContainer.Children.Count} displayed cards");
+            
+            MoviesContainer?.Children.Clear();
+            _displayedMovies?.Clear();
+
+            System.Diagnostics.Debug.WriteLine($"💾 Memory after cleanup: {GC.GetTotalMemory(false) / 1024 / 1024} MB");
         }
     }
 }

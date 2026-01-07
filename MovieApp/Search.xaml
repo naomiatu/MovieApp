@@ -53,14 +53,16 @@
         </ScrollView>
 
         <!-- Results -->
-        <ScrollView Grid.Row="2" x:Name="ResultsScrollView">
+        <ScrollView x:Name="ResultsScrollView" 
+            Grid.Row="2"
+            Scrolled="ResultsScrollView_Scrolled">
             <VerticalStackLayout x:Name="MoviesContainer"
                                  Padding="10"
                                  Spacing="10">
                 <!-- Movie cards added dynamically -->
             </VerticalStackLayout>
         </ScrollView>
-
+       
         <!-- Loading -->
         <Grid Grid.Row="2" x:Name="LoadingContainer" IsVisible="False">
             <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="15">
@@ -74,7 +76,7 @@
                        FontSize="16"/>
             </VerticalStackLayout>
         </Grid>
-
+        
         <!-- No Results -->
         <VerticalStackLayout Grid.Row="2" 
                              x:Name="NoResultsView"
