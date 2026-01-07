@@ -31,7 +31,7 @@ namespace MovieApp
 
         private async void Back_Clicked(object sender, EventArgs e)
         {
-            await Shell.Current.GoToAsync("..");
+            await Shell.Current.GoToAsync($"//MainPage");
         }
 
         private async void ClearCache_Tapped(object sender, EventArgs e)
