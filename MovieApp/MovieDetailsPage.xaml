@@ -6,7 +6,6 @@
     <ScrollView>
         <VerticalStackLayout Spacing="0">
 
-            <!-- Header with Back Button -->
             <Grid Padding="20,50,20,20" ColumnDefinitions="40,*,40">
                 <Button Grid.Column="0"
                         Text="←"
@@ -23,233 +22,91 @@
                        VerticalOptions="Center"/>
             </Grid>
 
-            <!-- Movie Poster with Play Overlay -->
             <Grid Margin="20,0,20,20" HeightRequest="400">
                 <Border StrokeShape="RoundRectangle 20"
                         StrokeThickness="0"
                         Shadow="{Shadow Brush=Black, Radius=10, Opacity=0.5}">
                     <Image x:Name="MoviePoster"
-                           Aspect="AspectFill"
-                           Source="{Binding PosterUrl}"/>
+                           Aspect="AspectFill"/>
                 </Border>
 
-                <!-- Trailer WebView -->
-                <WebView x:Name="TrailerWebView"
-                         IsVisible="False"
-                         BackgroundColor="Transparent"
-                         HorizontalOptions="Fill"
-                         VerticalOptions="Fill"/>
-
-                <!-- Play Button Overlay -->
-                <Border x:Name="PlayButton"
-                        StrokeShape="RoundRectangle 35"
-                        WidthRequest="70"
-                        HeightRequest="70"
-                        BackgroundColor="#40FFFFFF"
-                        Stroke="Transparent"
-                        HorizontalOptions="Center"
-                        VerticalOptions="Center"
-                        Shadow="{Shadow Brush=Black, Radius=15, Opacity=0.6}">
-                    <Button Text="▶"
-                            FontSize="30"
-                            TextColor="White"
-                            BackgroundColor="Transparent"
-                            Clicked="PlayMovie_Clicked"/>
-                </Border>
-
-                <!-- Watched Badge -->
                 <Border x:Name="WatchedBadge"
                         StrokeShape="RoundRectangle 15"
                         Padding="10,5"
                         BackgroundColor="#4CAF50"
-                        Stroke="Transparent"
                         HorizontalOptions="Start"
                         VerticalOptions="Start"
-                        Margin="10"
+                        Margin="15"
                         IsVisible="False">
-                    <Label Text="✓ Watched"
-                           FontSize="12"
-                           TextColor="White"
-                           FontAttributes="Bold"/>
+                    <Label Text="✓ Watched" TextColor="White" FontAttributes="Bold"/>
                 </Border>
             </Grid>
 
-            <!-- Movie Title & Genres -->
-            <VerticalStackLayout Padding="20,0" Spacing="10">
-                <Label x:Name="MovieTitle"
-                       Text="{Binding Title}"
-                       FontSize="26"
-                       FontAttributes="Bold"
-                       TextColor="White"
-                       LineBreakMode="WordWrap"/>
-                <Label x:Name="MovieGenres"
-                       Text="{Binding Genres}"
-                       FontSize="13"
+            <VerticalStackLayout Padding="20,0" Spacing="5">
+                <Label x:Name="MovieTitle" 
+                       FontSize="28" 
+                       FontAttributes="Bold" 
+                       TextColor="White"/>
+                <Label x:Name="MovieGenres" 
+                       FontSize="14" 
                        TextColor="#999"/>
             </VerticalStackLayout>
 
-            <!-- Movie Description -->
-            <Border StrokeShape="RoundRectangle 15" 
-                    Padding="15" 
-                    BackgroundColor="#1a1a1a" 
-                    Stroke="#333"
-                    StrokeThickness="1" 
-                    Margin="20,15">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="Overview" 
-                           FontSize="16" 
-                           FontAttributes="Bold" 
-                           TextColor="White"/>
-                    <Label x:Name="MovieDescription"
-                           Text="Movie description goes here..."
-                           FontSize="14"
-                           TextColor="#ccc"
-                           LineBreakMode="WordWrap"/>
-                </VerticalStackLayout>
-            </Border>
-
-            <!-- Action Buttons -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="20,0,20,15">
-                <Button x:Name="WatchedButton" 
-                        Grid.Column="0"
+            <HorizontalStackLayout Padding="20,20" Spacing="15">
+                <Button x:Name="WatchedButton"
                         Text="Mark as Watched"
-                        BackgroundColor="#4CAF50" 
-                        TextColor="White" 
-                        CornerRadius="25" 
-                        HeightRequest="50" 
-                        FontSize="14"
-                        FontAttributes="Bold"
-                        Clicked="ToggleWatched_Clicked"/>
+                        Clicked="ToggleWatched_Clicked"
+                        CornerRadius="25"
+                        HeightRequest="50"
+                        Padding="20,0"/>
+                <Button Text="Share"
+                        BackgroundColor="#2a2a2a"
+                        Clicked="ShareReview_Clicked"
+                        CornerRadius="25"
+                        HeightRequest="50"
+                        Padding="20,0"/>
+            </HorizontalStackLayout>
 
-                <Button x:Name="ShareButton" 
-                        Grid.Column="1"
-                        Text="Share Review"
-                        BackgroundColor="#2196F3" 
-                        TextColor="White" 
-                        CornerRadius="25" 
-                        HeightRequest="50" 
-                        FontSize="14"
-                        FontAttributes="Bold"
-                        Clicked="ShareReview_Clicked"/>
-            </Grid>
+            <VerticalStackLayout Padding="20,10" Spacing="10">
+                <Label Text="Storyline" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+                <Label x:Name="MovieDescription" FontSize="16" TextColor="#CCC" LineHeight="1.4"/>
+            </VerticalStackLayout>
 
-            <!-- Rating Section -->
-            <Border StrokeShape="RoundRectangle 15"
-                    Padding="15"
-                    BackgroundColor="#1a1a1a"
-                    Stroke="#333"
-                    StrokeThickness="1"
-                    Margin="20,10">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="Your Rating"
-                           FontSize="14"
-                           TextColor="#999"
-                           FontAttributes="Bold"/>
+            <VerticalStackLayout Padding="20,10" Spacing="15">
+                <Label Text="Your Rating" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+                <HorizontalStackLayout Spacing="10">
+                    <Button x:Name="Star1" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
+                    <Button x:Name="Star2" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
+                    <Button x:Name="Star3" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
+                    <Button x:Name="Star4" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
+                    <Button x:Name="Star5" Text="☆" FontSize="30" Clicked="Star_Clicked" BackgroundColor="Transparent"/>
+                    <Label x:Name="RatingText" VerticalOptions="Center" Margin="10,0" TextColor="#999"/>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
 
-                    <HorizontalStackLayout Spacing="10">
-                        <Button x:Name="Star1" Text="☆" FontSize="32"
-                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
-                        <Button x:Name="Star2" Text="☆" FontSize="32"
-                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
-                        <Button x:Name="Star3" Text="☆" FontSize="32"
-                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
-                        <Button x:Name="Star4" Text="☆" FontSize="32"
-                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
-                        <Button x:Name="Star5" Text="☆" FontSize="32"
-                                TextColor="#666" BackgroundColor="Transparent" Clicked="Star_Clicked"/>
-                    </HorizontalStackLayout>
+            <VerticalStackLayout Padding="20,10" Spacing="15">
+                <Label Text="How did it feel?" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+                <FlexLayout Wrap="Wrap" JustifyContent="Start">
+                    <Button x:Name="Emoji1" Text="😍" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
+                    <Button x:Name="Emoji2" Text="😴" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
+                    <Button x:Name="Emoji3" Text="😱" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
+                    <Button x:Name="Emoji4" Text="😂" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
+                    <Button x:Name="Emoji5" Text="🧐" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
+                    <Button x:Name="Emoji6" Text="🔥" Margin="0,0,10,10" Clicked="Emoji_Clicked" WidthRequest="50" HeightRequest="50"/>
+                </FlexLayout>
+            </VerticalStackLayout>
 
-                    <Label x:Name="RatingText" Text="Not rated" FontSize="12" TextColor="#999"/>
-                </VerticalStackLayout>
-            </Border>
-
-            <!-- Emoji Reactions -->
-            <Border StrokeShape="RoundRectangle 15"
-                    Padding="15"
-                    BackgroundColor="#1a1a1a"
-                    Stroke="#333"
-                    StrokeThickness="1"
-                    Margin="20,10">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="How did it make you feel?"
-                           FontSize="14"
-                           TextColor="#999"
-                           FontAttributes="Bold"/>
-                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
-                        <Button x:Name="Emoji1" Grid.Row="0" Grid.Column="0" Text="😍" FontSize="32"
-                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
-                        <Button x:Name="Emoji2" Grid.Row="0" Grid.Column="1" Text="😂" FontSize="32"
-                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
-                        <Button x:Name="Emoji3" Grid.Row="0" Grid.Column="2" Text="😭" FontSize="32"
-                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
-                        <Button x:Name="Emoji4" Grid.Row="1" Grid.Column="0" Text="😱" FontSize="32"
-                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
-                        <Button x:Name="Emoji5" Grid.Row="1" Grid.Column="1" Text="🤔" FontSize="32"
-                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
-                        <Button x:Name="Emoji6" Grid.Row="1" Grid.Column="2" Text="😴" FontSize="32"
-                                BackgroundColor="#2a2a2a" CornerRadius="12" HeightRequest="60" Clicked="Emoji_Clicked"/>
-                    </Grid>
-                </VerticalStackLayout>
-            </Border>
-
-            <!-- Cast Section -->
-            <VerticalStackLayout x:Name="CastSection" Padding="20" Spacing="15" Margin="0,20,0,0">
-                <Label Text="Cast" FontSize="20" FontAttributes="Bold" TextColor="White"/>
+            <!-- Similar Movies Section -->
+            <VerticalStackLayout x:Name="SimilarMoviesSection" Spacing="15" Padding="20,10" IsVisible="False">
+                <Label Text="You May Also Like" FontSize="20" FontAttributes="Bold" TextColor="White"/>
                 <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                    <HorizontalStackLayout Spacing="15" x:Name="CastContainer">
-                        <!-- Cast members added dynamically -->
-                    </HorizontalStackLayout>
+                    <HorizontalStackLayout x:Name="SimilarMoviesList" Spacing="15"/>
                 </ScrollView>
             </VerticalStackLayout>
 
-            <!-- Similar Movies -->
-            <VerticalStackLayout x:Name="SimilarMoviesSection" Padding="20" Spacing="15" Margin="0,20,0,30">
-                <Label Text="Similar Movies" FontSize="20" FontAttributes="Bold" TextColor="White"/>
-                <CollectionView HeightRequest="210" 
-                                HorizontalScrollBarVisibility="Never"
-                                SelectionMode="Single" 
-                                x:Name="SimilarMoviesCollection"
-                                SelectionChanged="OnSimilarMovieSelected">
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="15"/>
-                    </CollectionView.ItemsLayout>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Border StrokeShape="RoundRectangle 12" 
-                                    Stroke="Transparent"
-                                    WidthRequest="140" 
-                                    HeightRequest="200" 
-                                    BackgroundColor="#1a1a1a"
-                                    Shadow="{Shadow Brush=Black, Radius=10, Opacity=0.5}">
-                                <Image Aspect="AspectFill">
-                                    <Image.Source>
-                                        <UriImageSource Uri="{Binding Poster}" 
-                                                        CachingEnabled="True" 
-                                                        CacheValidity="1:00:00:00"/>
-                                    </Image.Source>
-                                </Image>
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-            </VerticalStackLayout>
-
-            <!-- Clear Cache & Sign Out Buttons -->
-            <HorizontalStackLayout Padding="20,10" Spacing="15">
-                <Button Text="Clear Cache" 
-                        BackgroundColor="#FF4D4D" 
-                        TextColor="White"
-                        CornerRadius="25" 
-                        HeightRequest="50" 
-                        FontAttributes="Bold" 
-                        Clicked="ClearCache_Tapped"/>
-                <Button Text="Sign Out" 
-                        BackgroundColor="#FFB800" 
-                        TextColor="Black"
-                        CornerRadius="25" 
-                        HeightRequest="50" 
-                        FontAttributes="Bold" 
-                        Clicked="SignOut_Tapped"/>
+            <HorizontalStackLayout Padding="20,30" Spacing="15">
+                <Button Text="Clear Cache" BackgroundColor="#FF4D4D" Clicked="ClearCache_Tapped" CornerRadius="25"/>
+                <Button Text="Sign Out" BackgroundColor="#FFB800" TextColor="Black" Clicked="SignOut_Tapped" CornerRadius="25"/>
             </HorizontalStackLayout>
 
         </VerticalStackLayout>
