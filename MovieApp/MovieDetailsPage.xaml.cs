@@ -223,9 +223,12 @@ namespace MovieApp
             {
                 button.BackgroundColor = selectedEmojis.Contains(button.Text)
                     ? _themeManager.AccentColor
-                    : Color.FromArgb("#2a2a2a");
+                    : _themeManager.IconBackgroundColor;
+
+                button.TextColor = Colors.White;
             }
         }
+
         #endregion
 
         #region Button Events
@@ -245,6 +248,7 @@ namespace MovieApp
             await SaveReviewAsync();
         }
 
+    
         private async void Emoji_Clicked(object sender, EventArgs e)
         {
             if (sender is not Button clickedEmoji) return;
@@ -255,13 +259,16 @@ namespace MovieApp
             if (_currentReview.SelectedEmojis.Contains(emoji))
             {
                 _currentReview.SelectedEmojis.Remove(emoji);
-                clickedEmoji.BackgroundColor = Color.FromArgb("#2a2a2a");
+                clickedEmoji.BackgroundColor = _themeManager.IconBackgroundColor;
             }
             else
             {
                 _currentReview.SelectedEmojis.Add(emoji);
                 clickedEmoji.BackgroundColor = _themeManager.AccentColor;
             }
+
+            // Always ensure the emoji itself is visible
+            clickedEmoji.TextColor = Colors.White;
 
             await clickedEmoji.ScaleTo(1.2, 80, Easing.CubicOut);
             await clickedEmoji.ScaleTo(1.0, 80, Easing.CubicIn);
