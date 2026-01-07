@@ -15,7 +15,7 @@ namespace MovieApp
         private int _reviewCount;
         private readonly ThemeManager _themeManager;
 
-         Cache review data to avoid expensive SecureStorage reads every time
+         //Cache review data to avoid expensive SecureStorage reads every time
         private static Dictionary<string, MovieReview> _cachedReviews = new Dictionary<string, MovieReview>();
         private static DateTime _lastReviewCacheUpdate = DateTime.MinValue;
         private const int REVIEW_CACHE_MINUTES = 5;
